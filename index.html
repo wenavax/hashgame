@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com https://firestore.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.cloudfunctions.net; upgrade-insecure-requests">
 <title>HashRig — Crypto Mining Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -393,14 +393,196 @@ body::after{
   #app{padding:0 20px 80px;}
   .rig-card,.sell-card{min-height:160px;}
 }
+
+/* ═══════════════════════════════════════════
+   NICKNAME MODAL
+   ═══════════════════════════════════════════ */
+.nick-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:rgba(5,10,14,.95);backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.nick-overlay.hidden{display:none;}
+.nick-box{
+  background:var(--s1);border:1px solid var(--g);border-radius:16px;
+  padding:30px 24px;width:100%;max-width:360px;text-align:center;
+  box-shadow:var(--gg);
+}
+.nick-title{
+  font-family:'Orbitron',sans-serif;font-size:20px;color:var(--g);
+  text-shadow:var(--gg);margin-bottom:6px;
+}
+.nick-sub{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.5;}
+.nick-input{
+  width:100%;padding:12px 16px;border-radius:8px;
+  background:var(--s2);border:1px solid var(--border);
+  color:var(--text);font-family:'Share Tech Mono',monospace;font-size:14px;
+  text-align:center;outline:none;
+}
+.nick-input:focus{border-color:var(--g);box-shadow:var(--gg);}
+.nick-input::placeholder{color:var(--muted);}
+.nick-error{font-size:11px;color:var(--r);margin-top:6px;min-height:16px;}
+.nick-submit{
+  width:100%;padding:12px;margin-top:14px;border-radius:8px;
+  background:rgba(0,255,136,.1);border:1px solid var(--g);
+  color:var(--g);font-family:'Orbitron',sans-serif;font-size:14px;
+  cursor:pointer;transition:all .15s;
+}
+.nick-submit:hover{background:rgba(0,255,136,.2);box-shadow:var(--gg);}
+.nick-submit:active{transform:scale(.97);}
+.nick-submit:disabled{opacity:.4;cursor:default;}
+
+/* ═══════════════════════════════════════════
+   DAILY ENERGY BAR
+   ═══════════════════════════════════════════ */
+.daily-bar{display:flex;align-items:center;gap:8px;padding:4px 0 8px;}
+.daily-label{font-size:11px;color:var(--muted);white-space:nowrap;}
+.daily-text{font-size:11px;color:var(--b);white-space:nowrap;}
+
+/* ═══════════════════════════════════════════
+   SESSION TIMER / OVERHEAT
+   ═══════════════════════════════════════════ */
+.session-bar{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;
+  font-size:11px;
+}
+.session-bar.overheat{border-color:var(--r);animation:pulse-overheat 1s infinite;}
+@keyframes pulse-overheat{
+  0%,100%{box-shadow:0 0 0 rgba(255,68,68,0);}
+  50%{box-shadow:0 0 20px rgba(255,68,68,.3);}
+}
+.rig-card.overheated{border-color:var(--r);animation:pulse-overheat 1s infinite;}
+.rig-card.depleted{border-color:var(--o);opacity:.6;}
+
+/* ═══════════════════════════════════════════
+   RIG GRID (4x4)
+   ═══════════════════════════════════════════ */
+.rig-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.grid-cell{
+  aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:var(--s1);border:1px solid var(--border);
+  transition:all .15s;cursor:pointer;position:relative;
+}
+.grid-cell-filled{border-color:var(--g);background:rgba(0,255,136,.04);}
+.grid-cell-filled.active-mining{animation:grid-pulse 2s infinite;}
+@keyframes grid-pulse{
+  0%,100%{box-shadow:0 0 0 rgba(0,255,136,0);}
+  50%{box-shadow:0 0 15px rgba(0,255,136,.3);}
+}
+.grid-cell-icon{font-size:24px;margin-bottom:2px;}
+.grid-cell-label{font-size:9px;color:var(--g);}
+.grid-cell-empty{border:1px dashed var(--muted);color:var(--muted);font-size:24px;}
+.grid-cell-empty:active{border-color:var(--g);color:var(--g);}
+.grid-cell-locked{border:1px solid rgba(26,58,80,.5);color:var(--muted);font-size:18px;opacity:.4;}
+.grid-sw-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.grid-sw-btn{
+  padding:8px 4px;border-radius:8px;text-align:center;
+  background:var(--s1);border:1px solid var(--border);cursor:pointer;
+  font-size:10px;color:var(--muted);transition:all .15s;
+  font-family:'Share Tech Mono',monospace;
+}
+.grid-sw-btn:active{transform:scale(.96);}
+.grid-sw-btn .sw-icon{font-size:18px;display:block;margin-bottom:2px;}
+.grid-sw-btn .sw-lvl{display:block;color:var(--b);margin-top:1px;}
+
+/* ═══════════════════════════════════════════
+   BATTLE ARENA
+   ═══════════════════════════════════════════ */
+.battle-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(5,10,14,.95);
+  display:none;align-items:center;justify-content:center;flex-direction:column;
+}
+.battle-overlay.show{display:flex;}
+.battle-arena{width:100%;max-width:400px;padding:20px;position:relative;}
+.battle-header{
+  text-align:center;font-family:'Orbitron',sans-serif;
+  font-size:14px;color:var(--r);margin-bottom:20px;
+  text-transform:uppercase;letter-spacing:2px;
+}
+.battle-field{
+  display:flex;justify-content:space-between;align-items:center;
+  position:relative;min-height:200px;
+}
+.battle-rig{width:120px;text-align:center;position:relative;z-index:2;}
+.battle-rig-icon{font-size:48px;margin-bottom:8px;}
+.battle-rig-name{font-size:11px;margin-bottom:6px;color:var(--text);}
+.battle-hp-wrap{background:var(--s2);border-radius:4px;height:8px;overflow:hidden;margin-bottom:4px;}
+.battle-hp-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+.battle-hp-player .battle-hp-fill{background:var(--g);}
+.battle-hp-enemy .battle-hp-fill{background:var(--r);}
+.battle-hp-label{font-size:9px;color:var(--muted);}
+.battle-vs{
+  font-family:'Orbitron',sans-serif;font-size:20px;color:var(--r);
+  text-shadow:0 0 20px rgba(255,68,68,.5);z-index:2;
+}
+.battle-beam-wrap{
+  position:absolute;top:50%;left:60px;right:60px;height:4px;z-index:1;
+  transform:translateY(-50%);display:none;
+}
+.battle-beam{
+  height:100%;border-radius:2px;width:0;
+  box-shadow:0 0 20px rgba(0,200,255,.5);
+}
+.battle-beam.green{background:linear-gradient(90deg,var(--g),var(--b),var(--g));}
+.battle-beam.red{background:linear-gradient(90deg,var(--r),var(--o),var(--r));}
+.battle-beam.fire{animation:beam-fire .8s ease-out forwards;}
+@keyframes beam-fire{0%{width:0;opacity:1;}100%{width:100%;opacity:1;}}
+.battle-result-text{
+  text-align:center;margin-top:20px;
+  font-family:'Orbitron',sans-serif;font-size:24px;
+  opacity:0;transition:opacity .5s;
+}
+.battle-result-text.show{opacity:1;}
+.battle-result-text.win{color:var(--g);text-shadow:var(--gg);}
+.battle-result-text.lose{color:var(--r);text-shadow:var(--gr);}
+.battle-result-detail{
+  text-align:center;font-size:14px;margin-top:8px;
+  opacity:0;transition:opacity .5s;color:var(--text);
+}
+.battle-result-detail.show{opacity:1;}
+.battle-shake{animation:battle-shake .3s ease;}
+@keyframes battle-shake{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-8px);}
+  50%{transform:translateX(8px);}
+  75%{transform:translateX(-4px);}
+}
+.battle-rig-hit{animation:rig-hit .3s ease;}
+@keyframes rig-hit{
+  0%{transform:scale(1);filter:brightness(1);}
+  50%{transform:scale(.9);filter:brightness(2);}
+  100%{transform:scale(1);filter:brightness(1);}
+}
+.battle-rig-glow{animation:rig-glow 1s ease infinite;}
+@keyframes rig-glow{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 0 transparent);}
+  50%{filter:brightness(1.3) drop-shadow(0 0 20px rgba(0,255,136,.5));}
+}
+.battle-rig-fade{animation:rig-fade .5s ease forwards;}
+@keyframes rig-fade{0%{opacity:1;transform:scale(1);}100%{opacity:.2;transform:scale(.8);}}
 </style>
 </head>
 <body>
+
+<!-- NICKNAME MODAL (blocks game until set) -->
+<div class="nick-overlay hidden" id="nick-overlay">
+  <div class="nick-box">
+    <div class="nick-title">⛏ WELCOME TO HASHRIG</div>
+    <div class="nick-sub">Choose your miner name.<br>3-16 chars, letters, numbers, underscore.</div>
+    <input class="nick-input" id="nick-input" type="text" maxlength="16" placeholder="Enter nickname..." autocomplete="off" spellcheck="false">
+    <div class="nick-error" id="nick-error"></div>
+    <button class="nick-submit" id="nick-submit">START MINING</button>
+  </div>
+</div>
+
 <div id="app">
 
   <!-- HEADER -->
   <div class="header">
-    <div class="logo font-title">HASHRIG</div>
+    <div class="logo font-title">HASHRIG <span id="header-nick" style="font-size:13px;color:var(--b);font-weight:400;"></span></div>
     <button class="wallet-btn" id="btn-wallet">💰 WALLET</button>
   </div>
 
@@ -437,6 +619,13 @@ body::after{
       <div class="res-label"><span>🔧 Health</span><span id="res-health-text">100/100</span></div>
       <div class="bar-wrap bar-o"><div class="bar-fill" id="res-health-bar" style="width:100%"></div></div>
     </div>
+  </div>
+
+  <!-- DAILY ENERGY BAR -->
+  <div class="daily-bar">
+    <span class="daily-label">🔋 Daily</span>
+    <div class="bar-wrap bar-g" style="height:8px;"><div class="bar-fill" id="daily-energy-fill" style="width:100%;background:linear-gradient(90deg,var(--b),var(--g));"></div></div>
+    <span class="daily-text" id="daily-energy-text">1000/1000</span>
   </div>
 
   <!-- COIN SELECTOR -->
@@ -478,6 +667,7 @@ body::after{
 
   <!-- ═══ MINE TAB ═══ -->
   <div class="tab-content active" id="tab-mine">
+    <div id="session-bar" class="session-bar" style="display:none;"></div>
     <div class="block-prog">
       <div class="block-label"><span>⛏ Block Progress</span><span id="block-text">0 / 100</span></div>
       <div class="block-bar"><div class="block-fill" id="block-fill" style="width:0%"></div></div>
@@ -499,31 +689,26 @@ body::after{
       <div class="action-card" id="btn-energy">
         <div class="action-icon">⚡</div>
         <div class="action-name">Recharge</div>
-        <div class="action-cost">20 HC</div>
+        <div class="action-cost" id="cost-energy">20 HC</div>
       </div>
       <div class="action-card" id="btn-cool">
         <div class="action-icon">❄️</div>
         <div class="action-name">Cool Down</div>
-        <div class="action-cost">15 HC</div>
+        <div class="action-cost" id="cost-cool">15 HC</div>
       </div>
       <div class="action-card" id="btn-repair">
         <div class="action-icon">🔧</div>
         <div class="action-name">Repair</div>
-        <div class="action-cost">30 HC</div>
+        <div class="action-cost" id="cost-repair">30 HC</div>
       </div>
     </div>
   </div>
 
-  <!-- ═══ RIG (UPGRADE) TAB ═══ -->
+  <!-- ═══ RIG (GRID) TAB ═══ -->
   <div class="tab-content" id="tab-rig">
-    <div class="sub-tabs" id="sub-tabs">
-      <div class="sub-tab active" data-sub="hw">🖥️ Hardware</div>
-      <div class="sub-tab" data-sub="sw">🔮 Software</div>
-      <div class="sub-tab" data-sub="def">🛡️ Defense</div>
-    </div>
-    <div id="sub-hw"></div>
-    <div id="sub-sw" style="display:none"></div>
-    <div id="sub-def" style="display:none"></div>
+    <div id="rig-grid" class="rig-grid"></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin:8px 0 4px;">⚙️ Software & Defense</div>
+    <div id="sw-panel" class="grid-sw-panel"></div>
   </div>
 
   <!-- ═══ QUESTS TAB ═══ -->
@@ -609,6 +794,44 @@ body::after{
   </div>
 </div>
 
+<!-- BUY HARDWARE PANEL -->
+<div class="modal-overlay" id="buy-panel-modal">
+  <div class="modal">
+    <div class="modal-title font-title">🛒 BUY HARDWARE</div>
+    <div id="buy-panel-list"></div>
+  </div>
+</div>
+
+<!-- BATTLE ARENA -->
+<div class="battle-overlay" id="battle-overlay">
+  <div class="battle-arena" id="battle-arena">
+    <div class="battle-header">⚔️ PVP BATTLE ⚔️</div>
+    <div class="battle-field">
+      <div class="battle-rig" id="battle-player-rig">
+        <div class="battle-rig-icon" id="battle-player-icon">⛏</div>
+        <div class="battle-rig-name" id="battle-player-name">You</div>
+        <div class="battle-hp-wrap battle-hp-player"><div class="battle-hp-fill" id="battle-player-hp" style="width:100%"></div></div>
+        <div class="battle-hp-label" id="battle-player-stat">1 H/s</div>
+      </div>
+      <div class="battle-vs">VS</div>
+      <div class="battle-rig" id="battle-enemy-rig">
+        <div class="battle-rig-icon" id="battle-enemy-icon">🐺</div>
+        <div class="battle-rig-name" id="battle-enemy-name">Enemy</div>
+        <div class="battle-hp-wrap battle-hp-enemy"><div class="battle-hp-fill" id="battle-enemy-hp" style="width:100%"></div></div>
+        <div class="battle-hp-label" id="battle-enemy-stat">30 DEF</div>
+      </div>
+    </div>
+    <div id="battle-beam-wrap" class="battle-beam-wrap"></div>
+    <div class="battle-result-text" id="battle-result"></div>
+    <div class="battle-result-detail" id="battle-detail"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK (compat mode for single-file usage) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
 <!-- ethers.js CDN with SRI -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"
         integrity="sha384-6Zl0Pc8zjSz8KvmNeXRvUQgY4ryFb+BwDvKCmLYcBME0joAaru491tQgi9B7zsMM"
@@ -655,6 +878,10 @@ const DEFAULTS = deepFreeze({
   pvpWins:0, pvpLosses:0, lastAttack:0,
   quests:[], questDate:'',
   sellCount:0, repairCount:0,
+  dailyEnergyUsed:0, dailyEnergyMax:1000,
+  dailyDate:'', dailyRefills:0,
+  sessionMineStart:0, overheated:false, overheatEnd:0,
+  gridUnlocked:4,
   upg:{
     gpu1:{l:0,max:10},gpu2:{l:0,max:8},asic:{l:0,max:5},rack:{l:0,max:3},
     algo:{l:0,max:5},pool:{l:0,max:5},oc:{l:0,max:3},
@@ -701,7 +928,9 @@ const STATE_KEYS = [
   'energy','maxEnergy','cool','maxCool','health','maxHealth',
   'blockProg','blockTarget','blocksFound','clicks','autoMiners',
   'coin','defenseRating','pvpWins','pvpLosses','lastAttack',
-  'quests','questDate','sellCount','repairCount'
+  'quests','questDate','sellCount','repairCount',
+  'dailyEnergyUsed','dailyEnergyMax','dailyDate','dailyRefills',
+  'sessionMineStart','overheated','overheatEnd','gridUnlocked'
 ];
 
 /* ═══════════════════════════════════════════
@@ -775,6 +1004,327 @@ function fmtPrice(n){
 }
 
 /* ═══════════════════════════════════════════
+   NICKNAME SYSTEM
+   ═══════════════════════════════════════════ */
+function getNickname(){
+  try{
+    var p=localStorage.getItem('hashrig_profile_v3');
+    if(p){var d=JSON.parse(p);if(d&&typeof d.nickname==='string'&&d.nickname.length>=3)return d.nickname;}
+  }catch(e){}
+  return null;
+}
+function setNickname(name){
+  localStorage.setItem('hashrig_profile_v3',JSON.stringify({nickname:name,createdAt:new Date().toISOString()}));
+}
+function validateNickname(name){
+  if(!name||name.length<3)return'Min 3 characters';
+  if(name.length>16)return'Max 16 characters';
+  if(!/^[a-zA-Z0-9_]+$/.test(name))return'Only letters, numbers, underscore';
+  return null;
+}
+function showNicknameModal(){document.getElementById('nick-overlay').classList.remove('hidden');}
+function hideNicknameModal(){document.getElementById('nick-overlay').classList.add('hidden');}
+function submitNickname(){
+  var input=document.getElementById('nick-input');
+  var name=input.value.trim();
+  var error=validateNickname(name);
+  var errorEl=document.getElementById('nick-error');
+  if(error){errorEl.textContent=error;return;}
+  errorEl.textContent='';
+  setNickname(name);
+  hideNicknameModal();
+  updateHeader();
+  _fbLastSync=0;fbSave(); /* create Firestore doc immediately */
+}
+function updateHeader(){
+  var nick=getNickname();
+  var el=document.getElementById('header-nick');
+  if(el&&nick)el.textContent='| '+nick;
+}
+
+/* ═══════════════════════════════════════════
+   DAILY ENERGY & SESSION SYSTEM
+   ═══════════════════════════════════════════ */
+function checkDailyReset(){
+  var today=todayStr();
+  if(S.dailyDate!==today){
+    S.dailyDate=today;
+    S.dailyEnergyUsed=0;
+    S.dailyRefills=0;
+    S.overheated=false;
+    S.overheatEnd=0;
+    S.sessionMineStart=0;
+  }
+}
+function checkOverheat(){
+  if(S.overheated&&Date.now()>=S.overheatEnd){
+    S.overheated=false;
+    S.overheatEnd=0;
+    S.sessionMineStart=0;
+  }
+}
+function getDailyEnergyRemaining(){return Math.max(0,S.dailyEnergyMax-S.dailyEnergyUsed);}
+function getRefillCost(base){return Math.floor(base*Math.pow(2,S.dailyRefills));}
+
+function updateSessionBar(){
+  var el=document.getElementById('session-bar');
+  if(!el)return;
+  checkOverheat();
+  if(S.overheated){
+    var rem=Math.ceil((S.overheatEnd-Date.now())/1000);
+    if(rem<0)rem=0;
+    el.className='session-bar overheat';
+    el.textContent='';
+    var t=document.createElement('span');
+    t.textContent='🔥 OVERHEATED! Cooldown: '+rem+'s';
+    t.style.color='var(--r)';
+    el.appendChild(t);
+    el.style.display='flex';
+  }else if(S.sessionMineStart>0){
+    var elapsed=Date.now()-S.sessionMineStart;
+    var remaining=Math.max(0,Math.ceil((180000-elapsed)/1000));
+    el.className='session-bar';
+    el.textContent='';
+    var t=document.createElement('span');
+    t.textContent='⏱ Session: '+remaining+'s';
+    t.style.color=remaining<30?'var(--o)':'var(--b)';
+    var bw=document.createElement('div');
+    bw.className='bar-wrap bar-b';bw.style.height='6px';
+    var bf=document.createElement('div');
+    bf.className='bar-fill';
+    bf.style.width=((180000-elapsed)/180000*100)+'%';
+    if(remaining<30)bf.style.background='var(--o)';
+    bw.appendChild(bf);
+    el.appendChild(t);el.appendChild(bw);
+    el.style.display='flex';
+  }else{
+    el.style.display='none';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   RIG GRID
+   ═══════════════════════════════════════════ */
+var HW_TYPES=[
+  {id:'gpu1',icon:'🖥️',name:'GPU'},
+  {id:'gpu2',icon:'💻',name:'RTX'},
+  {id:'asic',icon:'⚙️',name:'ASIC'},
+  {id:'rack',icon:'🏗️',name:'RACK'}
+];
+var GRID_UNLOCK_COSTS=[0,0,0,0,1000,2000,5000,10000,20000,40000,80000,160000,300000,500000,800000,1000000];
+
+function getUnlockCost(idx){return GRID_UNLOCK_COSTS[idx]||1000000;}
+
+function getTotalHardware(){
+  return S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l;
+}
+
+function renderGrid(){
+  var container=document.getElementById('rig-grid');
+  if(!container)return;
+  container.textContent='';
+
+  var hwItems=[];
+  HW_TYPES.forEach(function(hw){
+    for(var i=0;i<S.upg[hw.id].l;i++)hwItems.push({icon:hw.icon,name:hw.name,type:hw.id});
+  });
+
+  for(var i=0;i<16;i++){
+    var cell=document.createElement('div');
+    if(i<hwItems.length){
+      cell.className='grid-cell grid-cell-filled'+(S.autoMiners>0&&!S.overheated?' active-mining':'');
+      var ic=document.createElement('div');ic.className='grid-cell-icon';ic.textContent=hwItems[i].icon;
+      var lb=document.createElement('div');lb.className='grid-cell-label';lb.textContent=hwItems[i].name;
+      cell.appendChild(ic);cell.appendChild(lb);
+    }else if(i<S.gridUnlocked){
+      cell.className='grid-cell grid-cell-empty';
+      cell.textContent='+';
+      cell.setAttribute('data-grid-action','buy');
+    }else{
+      cell.className='grid-cell grid-cell-locked';
+      var lk=document.createElement('div');lk.style.fontSize='18px';lk.textContent='🔒';
+      var lc=document.createElement('div');lc.style.cssText='font-size:9px;color:var(--muted);margin-top:2px;';
+      lc.textContent=fmt(getUnlockCost(i))+' HC';
+      cell.appendChild(lk);cell.appendChild(lc);
+      cell.setAttribute('data-grid-action','unlock');
+      cell.setAttribute('data-grid-idx',String(i));
+    }
+    container.appendChild(cell);
+  }
+  renderSwPanel();
+}
+
+function unlockGridSlot(idx){
+  idx=parseInt(idx,10);
+  if(idx!==S.gridUnlocked)return;
+  var cost=getUnlockCost(idx);
+  if(S.coins<cost){showToast('Need '+fmt(cost)+' HC to unlock!');return;}
+  S.coins-=cost;
+  S.gridUnlocked++;
+  showToast('🔓 Grid slot unlocked!');
+  renderGrid();updateUI();
+}
+
+function openBuyPanel(){
+  var container=document.getElementById('buy-panel-list');
+  container.textContent='';
+  var totalHw=getTotalHardware();
+  var hasSpace=totalHw<S.gridUnlocked;
+
+  ['gpu1','gpu2','asic','rack'].forEach(function(id){
+    var u=UPGRADES[id];var lv=S.upg[id].l;var mx=S.upg[id].max;
+    var cost=uCost(id);var maxed=lv>=mx;var canBuy=S.coins>=cost&&!maxed&&hasSpace;
+
+    var card=document.createElement('div');card.className='upg-card';
+    var iconDiv=document.createElement('div');iconDiv.className='upg-icon';iconDiv.textContent=u.icon;
+    var infoDiv=document.createElement('div');infoDiv.className='upg-info';
+    var nameDiv=document.createElement('div');nameDiv.className='upg-name';nameDiv.textContent=u.name;
+    var descDiv=document.createElement('div');descDiv.className='upg-desc';descDiv.textContent=u.desc;
+    var lvlDiv=document.createElement('div');lvlDiv.className='upg-lvl';lvlDiv.textContent='Lv.'+lv+'/'+mx;
+    infoDiv.appendChild(nameDiv);infoDiv.appendChild(descDiv);infoDiv.appendChild(lvlDiv);
+    var buyDiv=document.createElement('div');buyDiv.className='upg-buy';
+    var btn=document.createElement('button');
+    btn.className='btn btn-sm '+(maxed?'':'btn-g');
+    btn.disabled=!canBuy;
+    btn.textContent=maxed?'MAX':!hasSpace?'NO SLOT':fmt(cost)+' HC';
+    btn.setAttribute('data-hw-buy',id);
+    buyDiv.appendChild(btn);
+    card.appendChild(iconDiv);card.appendChild(infoDiv);card.appendChild(buyDiv);
+    container.appendChild(card);
+  });
+
+  document.getElementById('buy-panel-modal').classList.add('show');
+}
+
+function closeBuyPanel(){document.getElementById('buy-panel-modal').classList.remove('show');}
+
+function renderSwPanel(){
+  var c=document.getElementById('sw-panel');
+  if(!c)return;
+  c.textContent='';
+  var items=[
+    {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
+    {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
+  ];
+  items.forEach(function(item){
+    var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
+    var btn=document.createElement('div');btn.className='grid-sw-btn';
+    btn.setAttribute('data-sw-upg',item.id);
+    var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
+    var nm=document.createElement('span');nm.textContent=item.name;
+    var lbl=document.createElement('span');lbl.className='sw-lvl';
+    lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
+    btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
+    if(maxed)btn.style.opacity='0.4';
+    c.appendChild(btn);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   PVP BATTLE ANIMATION
+   ═══════════════════════════════════════════ */
+var battleInProgress=false;
+
+function startBattle(enemyIdx){
+  if(battleInProgress)return;
+  if(enemyIdx<0||enemyIdx>=ENEMIES.length)return;
+  var now=Date.now();
+  if(now-S.lastAttack<60000){
+    var rem=Math.ceil((60000-(now-S.lastAttack))/1000);
+    showToast('⏳ Cooldown: '+rem+'s');return;
+  }
+
+  battleInProgress=true;
+  var enemy=ENEMIES[enemyIdx];
+  var winChance=S.hashRate/(S.hashRate+enemy.def);
+  winChance=Math.max(0.2,Math.min(0.8,winChance));
+  var isWin=Math.random()<winChance;
+  S.lastAttack=now;
+
+  var overlay=document.getElementById('battle-overlay');
+  overlay.classList.add('show');
+
+  document.getElementById('battle-player-icon').textContent='⛏';
+  document.getElementById('battle-player-name').textContent=getNickname()||'You';
+  document.getElementById('battle-player-hp').style.width='100%';
+  document.getElementById('battle-player-stat').textContent=S.hashRate+' H/s';
+
+  document.getElementById('battle-enemy-icon').textContent=enemy.icon;
+  document.getElementById('battle-enemy-name').textContent=enemy.name;
+  document.getElementById('battle-enemy-hp').style.width='100%';
+  document.getElementById('battle-enemy-stat').textContent=enemy.def+' DEF';
+
+  var resultEl=document.getElementById('battle-result');
+  var detailEl=document.getElementById('battle-detail');
+  resultEl.className='battle-result-text';resultEl.textContent='';
+  detailEl.className='battle-result-detail';detailEl.textContent='';
+
+  var beamWrap=document.getElementById('battle-beam-wrap');
+  beamWrap.style.display='none';beamWrap.textContent='';
+
+  var playerRig=document.getElementById('battle-player-rig');
+  var enemyRig=document.getElementById('battle-enemy-rig');
+  playerRig.className='battle-rig';
+  enemyRig.className='battle-rig';
+
+  /* Phase 1: Beam (1s) */
+  setTimeout(function(){
+    beamWrap.style.display='block';
+    var beam=document.createElement('div');
+    beam.className='battle-beam '+(isWin?'green':'red')+' fire';
+    beamWrap.appendChild(beam);
+    var arena=document.getElementById('battle-arena');
+    arena.classList.add('battle-shake');
+    if(navigator.vibrate)navigator.vibrate([50,30,50]);
+    setTimeout(function(){arena.classList.remove('battle-shake');},300);
+  },1000);
+
+  /* Phase 2: Impact (1.8s) */
+  setTimeout(function(){
+    if(isWin){
+      enemyRig.classList.add('battle-rig-hit');
+      document.getElementById('battle-enemy-hp').style.width='0%';
+    }else{
+      playerRig.classList.add('battle-rig-hit');
+      document.getElementById('battle-player-hp').style.width='15%';
+    }
+  },1800);
+
+  /* Phase 3: Result (2.5s) */
+  setTimeout(function(){
+    if(isWin){
+      var stolen=Math.floor(enemy.coins*0.1);
+      S.coins+=stolen;S.total+=stolen;S.pvpWins++;
+      checkQuest('pvpwin',1);
+      playerRig.classList.add('battle-rig-glow');
+      enemyRig.classList.add('battle-rig-fade');
+      resultEl.className='battle-result-text win show';
+      resultEl.textContent='VICTORY!';
+      detailEl.className='battle-result-detail show';
+      detailEl.textContent='+'+fmt(stolen)+' HC stolen from '+enemy.name;
+    }else{
+      var vaultProt=S.upg.vault.l*0.2;
+      var vulnerable=S.coins*(1-vaultProt);
+      var lost=Math.floor(vulnerable*0.05);
+      S.coins=Math.max(0,S.coins-lost);S.pvpLosses++;
+      enemyRig.classList.add('battle-rig-glow');
+      playerRig.classList.add('battle-rig-fade');
+      resultEl.className='battle-result-text lose show';
+      resultEl.textContent='DEFEATED!';
+      detailEl.className='battle-result-detail show';
+      detailEl.textContent='-'+fmt(lost)+' HC lost to '+enemy.name;
+    }
+    updateUI();renderEnemies();
+  },2500);
+
+  /* Phase 4: Close (4.5s) */
+  setTimeout(function(){
+    overlay.classList.remove('show');
+    battleInProgress=false;
+  },4500);
+}
+
+/* ═══════════════════════════════════════════
    UTILITY FUNCTIONS
    ═══════════════════════════════════════════ */
 function fmt(n){
@@ -815,6 +1365,7 @@ function save(){
   }catch(e){
     showToast('⚠️ Save failed — storage may be full');
   }
+  fbSave();
 }
 
 function clampNum(val, min, max){
@@ -838,8 +1389,10 @@ function load(){
         if(['BTC','ETH','SOL'].indexOf(parsed.coin) !== -1) S.coin = parsed.coin;
       } else if(k === 'quests'){
         if(Array.isArray(parsed.quests)) S.quests = sanitizeQuests(parsed.quests);
-      } else if(k === 'questDate'){
-        if(typeof parsed.questDate === 'string') S.questDate = parsed.questDate.slice(0,10);
+      } else if(k === 'questDate' || k === 'dailyDate'){
+        if(typeof parsed[k] === 'string') S[k] = parsed[k].slice(0,10);
+      } else if(typeof DEFAULTS[k] === 'boolean'){
+        if(typeof parsed[k] === 'boolean') S[k] = parsed[k];
       } else if(typeof DEFAULTS[k] === 'number'){
         S[k] = clampNum(parsed[k], 0, 1e15);
       }
@@ -858,6 +1411,10 @@ function load(){
     S.energy = Math.min(S.energy, S.maxEnergy);
     S.cool = Math.min(S.cool, S.maxCool);
     S.health = Math.min(S.health, S.maxHealth);
+
+    /* Grid migration: grandfather existing hardware */
+    var totalHw = S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l;
+    if(totalHw > S.gridUnlocked) S.gridUnlocked = Math.min(16, totalHw);
 
     calcHashRate();
     calcDefense();
@@ -887,9 +1444,30 @@ function sanitizeQuests(arr){
    MINING
    ═══════════════════════════════════════════ */
 function doMine(){
+  checkDailyReset();
+  checkOverheat();
+
+  if(S.overheated){
+    var rem=Math.ceil((S.overheatEnd-Date.now())/1000);
+    showToast('🔥 Rig overheated! '+rem+'s cooldown');return;
+  }
+  if(S.dailyEnergyUsed>=S.dailyEnergyMax){
+    showToast('🔋 Daily energy depleted! Come back tomorrow.');return;
+  }
   if(S.energy < 1){showToast('⚡ No energy! Recharge to continue mining.');return;}
   if(S.health < 1){showToast('🔧 Rig broken! Repair to continue mining.');return;}
 
+  /* Session overheat check */
+  if(S.sessionMineStart===0) S.sessionMineStart=Date.now();
+  if(Date.now()-S.sessionMineStart>180000){
+    S.overheated=true;
+    S.overheatEnd=Date.now()+60000;
+    S.sessionMineStart=0;
+    showToast('🔥 RIG OVERHEATED! 60s cooldown.');
+    updateSessionBar();updateUI();return;
+  }
+
+  S.dailyEnergyUsed++;
   S.energy = Math.max(0, S.energy - 1);
   S.cool = Math.max(0, S.cool - 0.8);
   S.health = Math.max(0, S.health - 0.3);
@@ -915,6 +1493,7 @@ function doMine(){
   rig.classList.remove('mine-flash');
   void rig.offsetWidth;
   rig.classList.add('mine-flash');
+  if(navigator.vibrate)navigator.vibrate(15);
 
   updateUI();
 }
@@ -954,7 +1533,10 @@ function startAutoMine(){
     /* Anti-tamper: skip if interval was manipulated (<500ms) */
     if(delta < 500) return;
 
+    checkDailyReset();checkOverheat();
     if(S.autoMiners <= 0 || S.energy < 1 || S.health < 1) return;
+    if(S.overheated || S.dailyEnergyUsed>=S.dailyEnergyMax) return;
+    S.dailyEnergyUsed++;
 
     S.energy = Math.max(0, S.energy - 0.3);
     S.cool = Math.max(0, S.cool - 0.2);
@@ -981,26 +1563,32 @@ function startAutoMine(){
    RESOURCE ACTIONS
    ═══════════════════════════════════════════ */
 function refillEnergy(){
-  if(S.coins < 20){showToast('Not enough HC!');return;}
-  S.coins -= 20;
+  var cost=getRefillCost(20);
+  if(S.coins < cost){showToast('Need '+fmt(cost)+' HC!');return;}
+  S.coins -= cost;
   S.energy = Math.min(S.maxEnergy, S.energy + 50);
+  S.dailyRefills++;
   showToast('⚡ +50 Energy');
   updateUI();
 }
 
 function refillCooling(){
-  if(S.coins < 15){showToast('Not enough HC!');return;}
-  S.coins -= 15;
+  var cost=getRefillCost(15);
+  if(S.coins < cost){showToast('Need '+fmt(cost)+' HC!');return;}
+  S.coins -= cost;
   S.cool = S.maxCool;
+  S.dailyRefills++;
   showToast('❄️ Cooling restored');
   updateUI();
 }
 
 function repairRig(){
-  if(S.coins < 30){showToast('Not enough HC!');return;}
-  S.coins -= 30;
+  var cost=getRefillCost(30);
+  if(S.coins < cost){showToast('Need '+fmt(cost)+' HC!');return;}
+  S.coins -= cost;
   S.health = S.maxHealth;
   S.repairCount++;
+  S.dailyRefills++;
   checkQuest('repair', 1);
   showToast('🔧 Rig repaired');
   updateUI();
@@ -1041,6 +1629,13 @@ function buyUpgrade(id){
   if(S.coins < cost) return;
   if(S.upg[id].l >= S.upg[id].max) return;
 
+  /* Hardware upgrades need a free grid slot */
+  if(UPGRADES[id].cat==='hw'){
+    if(getTotalHardware()>=S.gridUnlocked){
+      showToast('🔒 No empty grid slot! Unlock more.');return;
+    }
+  }
+
   S.coins -= cost;
   S.upg[id] = {l: S.upg[id].l + 1, max: S.upg[id].max};
   checkQuest('upgrade', 1);
@@ -1053,66 +1648,11 @@ function buyUpgrade(id){
 
   showToast('⬆️ ' + UPGRADES[id].name + ' → Lv.' + S.upg[id].l);
   updateUI();
-  renderUpgrades();
+  renderGrid();
+  closeBuyPanel();
 }
 
-function renderUpgrades(){
-  var cats = {hw:'sub-hw', sw:'sub-sw', def:'sub-def'};
-  Object.keys(cats).forEach(function(cat){
-    var container = document.getElementById(cats[cat]);
-    container.textContent = '';
-
-    Object.keys(UPGRADES).filter(function(id){return UPGRADES[id].cat===cat;}).forEach(function(id){
-      var u = UPGRADES[id];
-      var lv = S.upg[id].l;
-      var mx = S.upg[id].max;
-      var cost = uCost(id);
-      var maxed = lv >= mx;
-      var canBuy = S.coins >= cost && !maxed;
-
-      var card = document.createElement('div');
-      card.className = 'upg-card';
-
-      var iconDiv = document.createElement('div');
-      iconDiv.className = 'upg-icon';
-      iconDiv.textContent = u.icon;
-
-      var infoDiv = document.createElement('div');
-      infoDiv.className = 'upg-info';
-
-      var nameDiv = document.createElement('div');
-      nameDiv.className = 'upg-name';
-      nameDiv.textContent = u.name;
-
-      var descDiv = document.createElement('div');
-      descDiv.className = 'upg-desc';
-      descDiv.textContent = u.desc;
-
-      var lvlDiv = document.createElement('div');
-      lvlDiv.className = 'upg-lvl';
-      lvlDiv.textContent = 'Lv.'+lv+'/'+mx;
-
-      infoDiv.appendChild(nameDiv);
-      infoDiv.appendChild(descDiv);
-      infoDiv.appendChild(lvlDiv);
-
-      var buyDiv = document.createElement('div');
-      buyDiv.className = 'upg-buy';
-
-      var btn = document.createElement('button');
-      btn.className = 'btn btn-sm ' + (maxed ? '' : 'btn-g');
-      btn.disabled = !canBuy;
-      btn.textContent = maxed ? 'MAX' : fmt(cost)+' HC';
-      btn.setAttribute('data-upg', id);
-
-      buyDiv.appendChild(btn);
-      card.appendChild(iconDiv);
-      card.appendChild(infoDiv);
-      card.appendChild(buyDiv);
-      container.appendChild(card);
-    });
-  });
-}
+/* renderUpgrades removed — replaced by grid + buy panel */
 
 /* ═══════════════════════════════════════════
    DAILY QUESTS (safe DOM rendering)
@@ -1469,6 +2009,95 @@ function closeBlockModal(){
 }
 
 /* ═══════════════════════════════════════════
+   FIREBASE INTEGRATION
+   ═══════════════════════════════════════════ */
+var _fb=null; /* {app, db, auth} */
+var _fbReady=false;
+var _fbLastSync=0;
+var FB_SYNC_INTERVAL=30000; /* 30s debounce */
+
+function initFirebase(){
+  try{
+    if(typeof firebase==='undefined')return;
+    var app=firebase.initializeApp({
+      apiKey:"AIzaSyDdMzE_VzytVEBtJ0v4HRjWtGFhmkpP6PQ",
+      authDomain:"hashrategame-2d2e9.firebaseapp.com",
+      projectId:"hashrategame-2d2e9",
+      storageBucket:"hashrategame-2d2e9.firebasestorage.app",
+      messagingSenderId:"629396589127",
+      appId:"1:629396589127:web:668a09e5d326518e87ff62"
+    });
+    _fb={app:app, db:firebase.firestore(), auth:firebase.auth()};
+
+    /* Anonymous auth */
+    _fb.auth.signInAnonymously().then(function(){
+      _fbReady=true;
+      fbLoad();
+    }).catch(function(e){
+      _fbReady=false;
+    });
+  }catch(e){
+    _fbReady=false;
+  }
+}
+
+function fbDocId(){
+  if(!_wallet)return null;
+  return _wallet.address.toLowerCase();
+}
+
+function fbSave(){
+  if(!_fbReady||!_fb)return;
+  var now=Date.now();
+  if(now-_fbLastSync<FB_SYNC_INTERVAL)return;
+  _fbLastSync=now;
+
+  var docId=fbDocId();
+  if(!docId)return;
+
+  var nick=getNickname()||'';
+  _fb.db.collection('players').doc(docId).set({
+    nickname:nick,
+    walletAddress:docId,
+    coins:Math.floor(S.coins),
+    totalMined:Math.floor(S.total),
+    hashRate:S.hashRate,
+    blocksFound:S.blocksFound,
+    pvpWins:S.pvpWins,
+    pvpLosses:S.pvpLosses,
+    clicks:S.clicks,
+    gridUnlocked:S.gridUnlocked,
+    lastSeen:firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true}).catch(function(){});
+}
+
+function fbLoad(){
+  if(!_fbReady||!_fb)return;
+  var docId=fbDocId();
+  if(!docId)return;
+
+  _fb.db.collection('players').doc(docId).get().then(function(snap){
+    if(!snap.exists)return;
+    var d=snap.data();
+    /* Firestore wins on total stats (anti-rollback) */
+    if(typeof d.totalMined==='number'&&d.totalMined>S.total){
+      S.total=d.totalMined;
+    }
+    if(typeof d.pvpWins==='number'&&d.pvpWins>S.pvpWins){
+      S.pvpWins=d.pvpWins;
+    }
+    if(typeof d.pvpLosses==='number'&&d.pvpLosses>S.pvpLosses){
+      S.pvpLosses=d.pvpLosses;
+    }
+    if(typeof d.blocksFound==='number'&&d.blocksFound>S.blocksFound){
+      S.blocksFound=d.blocksFound;
+    }
+    updateUI();
+  }).catch(function(){});
+}
+
+/* ═══════════════════════════════════════════
    TAB SWITCHING
    ═══════════════════════════════════════════ */
 function switchTab(tab){
@@ -1485,20 +2114,12 @@ function switchTab(tab){
     el.classList.toggle('active', tabs[i]===tab);
   });
 
-  if(tab==='rig') renderUpgrades();
+  if(tab==='rig') renderGrid();
   if(tab==='quests') renderQuests();
   if(tab==='pvp') renderEnemies();
 }
 
-function switchSub(sub){
-  if(['hw','sw','def'].indexOf(sub) === -1) return;
-  ['hw','sw','def'].forEach(function(s){
-    document.getElementById('sub-'+s).style.display = s===sub ? 'block' : 'none';
-  });
-  document.querySelectorAll('.sub-tab').forEach(function(el,i){
-    el.classList.toggle('active', ['hw','sw','def'][i]===sub);
-  });
-}
+/* switchSub removed — replaced by grid */
 
 /* ═══════════════════════════════════════════
    UI UPDATE
@@ -1526,6 +2147,30 @@ function updateUI(){
   document.getElementById('res-energy-bar').style.background = S.energy < 20 ? 'var(--r)' : 'var(--g)';
   document.getElementById('res-cool-bar').style.background = S.cool < 20 ? 'var(--r)' : 'var(--b)';
   document.getElementById('res-health-bar').style.background = S.health < 20 ? 'var(--r)' : 'var(--o)';
+
+  /* Daily energy bar */
+  var dailyRem=getDailyEnergyRemaining();
+  document.getElementById('daily-energy-fill').style.width=(dailyRem/S.dailyEnergyMax*100)+'%';
+  document.getElementById('daily-energy-text').textContent=dailyRem+'/'+S.dailyEnergyMax;
+
+  /* Escalating refill costs */
+  document.getElementById('cost-energy').textContent=fmt(getRefillCost(20))+' HC';
+  document.getElementById('cost-cool').textContent=fmt(getRefillCost(15))+' HC';
+  document.getElementById('cost-repair').textContent=fmt(getRefillCost(30))+' HC';
+
+  /* Rig card state */
+  var rigCard=document.getElementById('rig-card');
+  var rigLabel=rigCard.querySelector('.rig-label');
+  rigCard.classList.remove('overheated','depleted');
+  if(S.overheated){
+    rigCard.classList.add('overheated');
+    rigLabel.textContent='OVERHEATED!';rigLabel.style.color='var(--r)';
+  }else if(S.dailyEnergyUsed>=S.dailyEnergyMax){
+    rigCard.classList.add('depleted');
+    rigLabel.textContent='DEPLETED';rigLabel.style.color='var(--o)';
+  }else{
+    rigLabel.textContent='TAP TO MINE';rigLabel.style.color='var(--g)';
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -1583,10 +2228,28 @@ document.getElementById('bottom-nav').addEventListener('click', function(e){
   if(btn && btn.dataset.tab) switchTab(btn.dataset.tab);
 });
 
-/* Sub-tabs delegation */
-document.getElementById('sub-tabs').addEventListener('click', function(e){
-  var btn = e.target.closest('.sub-tab');
-  if(btn && btn.dataset.sub) switchSub(btn.dataset.sub);
+/* Grid cell delegation */
+document.getElementById('rig-grid').addEventListener('click', function(e){
+  var cell = e.target.closest('.grid-cell');
+  if(!cell) return;
+  var action = cell.getAttribute('data-grid-action');
+  if(action === 'buy') openBuyPanel();
+  else if(action === 'unlock') unlockGridSlot(cell.getAttribute('data-grid-idx'));
+});
+
+/* Software/defense panel delegation */
+document.getElementById('sw-panel').addEventListener('click', function(e){
+  var btn = e.target.closest('.grid-sw-btn');
+  if(btn && btn.dataset.swUpg) buyUpgrade(btn.dataset.swUpg);
+});
+
+/* Buy hardware panel delegation */
+document.getElementById('buy-panel-list').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-hw-buy]');
+  if(btn) buyUpgrade(btn.dataset.hwBuy);
+});
+document.getElementById('buy-panel-modal').addEventListener('click', function(e){
+  if(e.target === this) closeBuyPanel();
 });
 
 /* Wallet tabs delegation */
@@ -1601,16 +2264,10 @@ document.querySelector('.coin-sel').addEventListener('click', function(e){
   if(btn && btn.dataset.coin) selectCoin(btn.dataset.coin);
 });
 
-/* Upgrade buy delegation */
-document.getElementById('tab-rig').addEventListener('click', function(e){
-  var btn = e.target.closest('button[data-upg]');
-  if(btn) buyUpgrade(btn.dataset.upg);
-});
-
-/* Enemy attack delegation */
+/* Enemy attack delegation → battle animation */
 document.getElementById('enemy-list').addEventListener('click', function(e){
   var card = e.target.closest('.enemy-card');
-  if(card && card.dataset.enemy) attack(parseInt(card.dataset.enemy, 10));
+  if(card && card.dataset.enemy) startBattle(parseInt(card.dataset.enemy, 10));
 });
 
 /* Modal overlay close */
@@ -1619,6 +2276,12 @@ document.getElementById('wallet-modal').addEventListener('click', function(e){
 });
 document.getElementById('block-modal').addEventListener('click', function(e){
   if(e.target === this) closeBlockModal();
+});
+
+/* Nickname submission */
+document.getElementById('nick-submit').addEventListener('click', submitNickname);
+document.getElementById('nick-input').addEventListener('keydown', function(e){
+  if(e.key==='Enter') submitNickname();
 });
 
 /* Keyboard: SPACE to mine */
@@ -1634,16 +2297,31 @@ document.addEventListener('keydown', function(e){
    ═══════════════════════════════════════════ */
 async function init(){
   load();
+  checkDailyReset();
   generateQuests();
   calcHashRate();
   calcDefense();
   calcAutoMiners();
+
+  /* Nickname check */
+  if(!getNickname()){
+    showNicknameModal();
+  }
+  updateHeader();
+
+  /* Expired session reset */
+  if(S.sessionMineStart>0&&Date.now()-S.sessionMineStart>180000){
+    S.sessionMineStart=0;
+  }
+  checkOverheat();
+
   updateUI();
-  renderUpgrades();
+  renderGrid();
   renderQuests();
   renderEnemies();
 
   await initWallet();
+  initFirebase();
 
   if(S.autoMiners > 0) startAutoMine();
 
@@ -1652,6 +2330,7 @@ async function init(){
   setInterval(updateQuestCountdown, 1000);
   updateQuestCountdown();
   setInterval(updatePvpCooldown, 1000);
+  setInterval(updateSessionBar, 1000);
 }
 
 init();
