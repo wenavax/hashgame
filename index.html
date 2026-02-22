@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>HashRig — Crypto Mining Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM
+   ═══════════════════════════════════════════ */
+:root{
+  --bg:#050a0e;--s1:#0a1520;--s2:#0f1e2e;--border:#1a3a50;
+  --g:#00ff88;--b:#00c8ff;--r:#ff4444;--o:#ff6b35;--y:#ffcc00;
+  --text:#c8e8ff;--muted:#4a7a9a;
+  --gg:0 0 18px rgba(0,255,136,.45);
+  --gb:0 0 18px rgba(0,200,255,.45);
+  --gr:0 0 18px rgba(255,68,68,.45);
+  --gy:0 0 18px rgba(255,204,0,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  height:100%;overflow-x:hidden;
+  background:var(--bg);color:var(--text);
+  font-family:'Share Tech Mono',monospace;font-size:14px;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,255,136,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,136,.025) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:1;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.07) 2px,rgba(0,0,0,.07) 4px);
+}
+#app{position:relative;z-index:2;max-width:480px;margin:0 auto;padding:0 12px 80px;min-height:100vh;}
+
+/* ─── Typography ─── */
+.font-title{font-family:'Orbitron',sans-serif;}
+.text-g{color:var(--g);}
+.text-b{color:var(--b);}
+.text-r{color:var(--r);}
+.text-o{color:var(--o);}
+.text-y{color:var(--y);}
+.text-muted{color:var(--muted);}
+
+/* ─── Cards ─── */
+.card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:14px;margin-bottom:10px;position:relative;overflow:hidden;
+}
+.card-glow-g{box-shadow:var(--gg);}
+.card-glow-b{box-shadow:var(--gb);}
+
+/* ─── Buttons ─── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:10px 16px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:13px;
+  transition:all .15s;
+}
+.btn:active{transform:scale(.95);}
+.btn-g{border-color:var(--g);color:var(--g);}
+.btn-g:hover{background:rgba(0,255,136,.1);box-shadow:var(--gg);}
+.btn-b{border-color:var(--b);color:var(--b);}
+.btn-b:hover{background:rgba(0,200,255,.1);box-shadow:var(--gb);}
+.btn-r{border-color:var(--r);color:var(--r);}
+.btn-r:hover{background:rgba(255,68,68,.1);box-shadow:var(--gr);}
+.btn-y{border-color:var(--y);color:var(--y);}
+.btn-y:hover{background:rgba(255,204,0,.1);box-shadow:var(--gy);}
+.btn:disabled{opacity:.35;pointer-events:none;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+
+/* ─── Progress bars ─── */
+.bar-wrap{background:var(--s2);border-radius:6px;height:10px;overflow:hidden;flex:1;}
+.bar-fill{height:100%;border-radius:6px;transition:width .3s;}
+.bar-g .bar-fill{background:var(--g);}
+.bar-b .bar-fill{background:var(--b);}
+.bar-r .bar-fill{background:var(--r);}
+.bar-o .bar-fill{background:var(--o);}
+.bar-y .bar-fill{background:var(--y);}
+
+/* ═══════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════ */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0 10px;
+}
+.logo{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--g);text-shadow:var(--gg);letter-spacing:2px;}
+.wallet-btn{
+  background:var(--s2);border:1px solid var(--g);border-radius:8px;
+  padding:8px 14px;color:var(--g);font-size:12px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;
+}
+.wallet-btn:active{transform:scale(.95);}
+
+/* ═══════════════════════════════════════════
+   TICKER
+   ═══════════════════════════════════════════ */
+.ticker{
+  display:flex;gap:8px;padding:8px 0;overflow-x:auto;
+  scrollbar-width:none;
+}
+.ticker::-webkit-scrollbar{display:none;}
+.tick-item{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;
+  background:var(--s1);border:1px solid var(--border);border-radius:8px;
+  padding:6px 8px;font-size:11px;
+}
+.tick-sym{font-weight:700;font-family:'Orbitron',sans-serif;font-size:10px;margin-bottom:2px;}
+.tick-price{font-size:13px;font-weight:700;}
+.tick-chg{font-size:10px;margin-top:1px;}
+
+/* ═══════════════════════════════════════════
+   RESOURCE BARS
+   ═══════════════════════════════════════════ */
+.resources{display:flex;gap:8px;padding:8px 0;}
+.res-item{flex:1;display:flex;flex-direction:column;gap:3px;}
+.res-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+
+/* ═══════════════════════════════════════════
+   COIN SELECTOR
+   ═══════════════════════════════════════════ */
+.coin-sel{display:flex;gap:8px;padding:6px 0;}
+.coin-btn{
+  flex:1;padding:10px 8px;border-radius:8px;text-align:center;
+  background:var(--s1);border:2px solid var(--border);cursor:pointer;
+  transition:all .15s;
+}
+.coin-btn.active{border-color:var(--g);background:rgba(0,255,136,.08);box-shadow:var(--gg);}
+.coin-btn .c-sym{font-size:18px;display:block;}
+.coin-btn .c-name{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
+.coin-btn .c-mult{font-size:10px;color:var(--g);display:block;margin-top:1px;}
+
+/* ═══════════════════════════════════════════
+   STATS ROW
+   ═══════════════════════════════════════════ */
+.stats{display:flex;gap:8px;padding:8px 0;}
+.stat-item{
+  flex:1;text-align:center;background:var(--s1);border:1px solid var(--border);
+  border-radius:8px;padding:8px 4px;
+}
+.stat-val{font-size:16px;font-weight:700;color:var(--y);font-family:'Orbitron',sans-serif;}
+.stat-label{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ═══════════════════════════════════════════
+   TABS
+   ═══════════════════════════════════════════ */
+.tab-nav{
+  display:flex;gap:4px;padding:6px 0;
+}
+.tab-btn{
+  flex:1;padding:10px 4px;text-align:center;border-radius:8px;
+  background:var(--s1);border:1px solid var(--border);cursor:pointer;
+  font-size:12px;color:var(--muted);transition:all .15s;
+  font-family:'Share Tech Mono',monospace;
+}
+.tab-btn.active{border-color:var(--g);color:var(--g);background:rgba(0,255,136,.06);}
+.tab-content{display:none;padding:8px 0;}
+.tab-content.active{display:block;}
+
+/* ─── Sub-tabs (Rig) ─── */
+.sub-tabs{display:flex;gap:4px;margin-bottom:10px;}
+.sub-tab{
+  flex:1;padding:8px 4px;text-align:center;border-radius:6px;
+  background:var(--s2);border:1px solid transparent;cursor:pointer;
+  font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;
+}
+.sub-tab.active{border-color:var(--b);color:var(--b);}
+
+/* ═══════════════════════════════════════════
+   MINE TAB
+   ═══════════════════════════════════════════ */
+.block-prog{margin-bottom:10px;}
+.block-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.block-bar{background:var(--s2);border-radius:6px;height:14px;overflow:hidden;}
+.block-fill{height:100%;background:linear-gradient(90deg,var(--b),var(--g));border-radius:6px;transition:width .3s;}
+
+.mine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+
+.rig-card{
+  background:var(--s1);border:2px solid var(--g);border-radius:14px;
+  padding:20px;text-align:center;cursor:pointer;position:relative;
+  overflow:hidden;min-height:140px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;transition:all .1s;
+}
+.rig-card:active{transform:scale(.95);box-shadow:var(--gg);}
+.rig-icon{font-size:48px;margin-bottom:8px;position:relative;z-index:1;}
+.rig-label{font-size:12px;color:var(--g);z-index:1;}
+
+/* Orbit rings */
+.orbit{
+  position:absolute;border:1px solid rgba(0,255,136,.15);border-radius:50%;
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;
+}
+.orbit-1{width:100px;height:100px;animation:spin 6s linear infinite;}
+.orbit-2{width:140px;height:140px;animation:spin 8s linear infinite reverse;}
+.orbit-dot{
+  position:absolute;width:6px;height:6px;background:var(--g);border-radius:50%;
+  top:-3px;left:50%;margin-left:-3px;box-shadow:var(--gg);animation:blink 1.5s ease infinite;
+}
+
+.sell-card{
+  background:var(--s1);border:2px solid var(--y);border-radius:14px;
+  padding:20px;text-align:center;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;min-height:140px;transition:all .1s;
+}
+.sell-card:active{transform:scale(.95);box-shadow:var(--gy);}
+.sell-icon{font-size:48px;margin-bottom:8px;}
+.sell-label{font-size:12px;color:var(--y);}
+
+.action-row{display:flex;gap:8px;}
+.action-card{
+  flex:1;background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s;
+}
+.action-card:active{transform:scale(.96);}
+.action-icon{font-size:22px;margin-bottom:4px;}
+.action-name{font-size:11px;color:var(--text);margin-bottom:2px;}
+.action-cost{font-size:10px;color:var(--muted);}
+
+/* ═══════════════════════════════════════════
+   UPGRADE CARDS
+   ═══════════════════════════════════════════ */
+.upg-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:8px;
+}
+.upg-icon{font-size:28px;flex-shrink:0;width:40px;text-align:center;}
+.upg-info{flex:1;min-width:0;}
+.upg-name{font-size:13px;font-weight:700;}
+.upg-desc{font-size:11px;color:var(--muted);margin-top:1px;}
+.upg-lvl{font-size:10px;color:var(--b);margin-top:2px;}
+.upg-buy{flex-shrink:0;}
+
+/* ═══════════════════════════════════════════
+   QUESTS
+   ═══════════════════════════════════════════ */
+.quest-timer{text-align:center;font-size:12px;color:var(--muted);margin-bottom:10px;}
+.quest-timer span{color:var(--b);}
+.quest-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:8px;
+}
+.quest-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.quest-name{font-size:13px;font-weight:700;}
+.quest-reward{font-size:12px;color:var(--y);}
+.quest-desc{font-size:11px;color:var(--muted);margin-bottom:6px;}
+.quest-prog{display:flex;align-items:center;gap:8px;}
+.quest-prog-text{font-size:11px;color:var(--b);white-space:nowrap;}
+.quest-done{
+  display:inline-block;background:var(--g);color:var(--bg);
+  padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;
+}
+
+/* ═══════════════════════════════════════════
+   PVP
+   ═══════════════════════════════════════════ */
+.pvp-rules{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px;font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5;
+}
+.pvp-result{
+  display:none;background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:14px;text-align:center;margin-bottom:10px;
+}
+.pvp-result.show{display:block;}
+.pvp-result.win{border-color:var(--g);color:var(--g);}
+.pvp-result.lose{border-color:var(--r);color:var(--r);}
+.pvp-cooldown{text-align:center;font-size:12px;color:var(--o);margin-bottom:10px;}
+.enemy-card{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s;
+}
+.enemy-card:active{transform:scale(.98);}
+.enemy-icon{font-size:24px;flex-shrink:0;width:32px;text-align:center;}
+.enemy-info{flex:1;min-width:0;}
+.enemy-name{font-size:13px;font-weight:700;}
+.enemy-stats{font-size:10px;color:var(--muted);margin-top:1px;}
+.enemy-win{font-size:12px;font-weight:700;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════
+   BOTTOM NAV
+   ═══════════════════════════════════════════ */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--s1);border-top:1px solid var(--border);
+  display:flex;padding:8px 0 env(safe-area-inset-bottom,8px);
+  max-width:480px;margin:0 auto;
+}
+.bnav-btn{
+  flex:1;text-align:center;padding:8px 4px;cursor:pointer;
+  color:var(--muted);font-size:10px;transition:color .15s;
+  font-family:'Share Tech Mono',monospace;
+}
+.bnav-btn.active{color:var(--g);}
+.bnav-btn .bnav-icon{font-size:20px;display:block;margin-bottom:2px;}
+
+/* ═══════════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════════ */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(5,10,14,.85);backdrop-filter:blur(6px);
+  justify-content:center;align-items:center;padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal{
+  background:var(--s1);border:1px solid var(--border);border-radius:16px;
+  width:100%;max-width:400px;max-height:80vh;overflow-y:auto;padding:20px;
+}
+.modal-title{
+  font-family:'Orbitron',sans-serif;font-size:16px;text-align:center;
+  margin-bottom:14px;color:var(--g);
+}
+.modal-tabs{display:flex;gap:4px;margin-bottom:14px;}
+.modal-tab{
+  flex:1;padding:8px;text-align:center;border-radius:6px;
+  background:var(--s2);border:1px solid transparent;cursor:pointer;
+  font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;
+}
+.modal-tab.active{border-color:var(--g);color:var(--g);}
+.modal-pane{display:none;}
+.modal-pane.active{display:block;}
+
+.seed-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0;
+}
+.seed-word{
+  background:var(--s2);border:1px solid var(--border);border-radius:6px;
+  padding:8px 4px;text-align:center;font-size:12px;
+}
+.seed-word .sw-num{font-size:9px;color:var(--muted);display:block;margin-bottom:1px;}
+.hidden-text{filter:blur(6px);transition:filter .3s;}
+.revealed{filter:none;}
+
+.addr-display{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px;font-size:12px;word-break:break-all;text-align:center;margin:8px 0;
+}
+.pk-display{
+  background:var(--s2);border:1px solid var(--border);border-radius:8px;
+  padding:10px;font-size:11px;word-break:break-all;text-align:center;margin:8px 0;
+}
+.copy-btn{
+  display:block;width:100%;padding:10px;margin-top:8px;border-radius:8px;
+  background:var(--s2);border:1px solid var(--g);color:var(--g);
+  cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;text-align:center;
+}
+.copy-btn:active{background:rgba(0,255,136,.15);}
+
+/* Block found modal */
+.block-modal-icon{font-size:48px;text-align:center;margin-bottom:10px;}
+.block-modal-reward{font-size:20px;text-align:center;color:var(--y);font-family:'Orbitron',sans-serif;margin:8px 0;}
+.block-modal-sub{font-size:12px;text-align:center;color:var(--muted);margin-bottom:14px;}
+
+/* ═══════════════════════════════════════════
+   FLOATING PARTICLES
+   ═══════════════════════════════════════════ */
+.particle{
+  position:fixed;pointer-events:none;z-index:300;
+  font-size:14px;font-weight:700;color:var(--g);
+  font-family:'Orbitron',sans-serif;
+  animation:floatUp .9s ease-out forwards;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateY(0) scale(1);}
+  100%{opacity:0;transform:translateY(-60px) scale(1.3);}
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════ */
+@keyframes spin{from{transform:translate(-50%,-50%) rotate(0deg);}to{transform:translate(-50%,-50%) rotate(360deg);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+@keyframes mineFlash{0%{box-shadow:0 0 0 rgba(0,255,136,0);}50%{box-shadow:0 0 30px rgba(0,255,136,.5);}100%{box-shadow:0 0 0 rgba(0,255,136,0);}}
+@keyframes pulseIcon{0%{transform:scale(1);}50%{transform:scale(1.15);}100%{transform:scale(1);}}
+.mine-flash{animation:mineFlash .3s ease;}
+.pulse-anim{animation:pulseIcon .2s ease;}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media(min-width:500px){
+  #app{padding:0 20px 80px;}
+  .rig-card,.sell-card{min-height:160px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo font-title">HASHRIG</div>
+    <button class="wallet-btn" onclick="openWallet()">💰 WALLET</button>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="tick-item" id="tick-BTC">
+      <span class="tick-sym font-title">₿ BTC</span>
+      <span class="tick-price" id="tick-BTC-price">$64,200</span>
+      <span class="tick-chg" id="tick-BTC-chg">+0.0%</span>
+    </div>
+    <div class="tick-item" id="tick-ETH">
+      <span class="tick-sym font-title">Ξ ETH</span>
+      <span class="tick-price" id="tick-ETH-price">$3,450</span>
+      <span class="tick-chg" id="tick-ETH-chg">+0.0%</span>
+    </div>
+    <div class="tick-item" id="tick-SOL">
+      <span class="tick-sym font-title">◎ SOL</span>
+      <span class="tick-price" id="tick-SOL-price">$145</span>
+      <span class="tick-chg" id="tick-SOL-chg">+0.0%</span>
+    </div>
+  </div>
+
+  <!-- RESOURCE BARS -->
+  <div class="resources">
+    <div class="res-item">
+      <div class="res-label"><span>⚡ Energy</span><span id="res-energy-text">100/100</span></div>
+      <div class="bar-wrap bar-g"><div class="bar-fill" id="res-energy-bar" style="width:100%"></div></div>
+    </div>
+    <div class="res-item">
+      <div class="res-label"><span>❄️ Cooling</span><span id="res-cool-text">100/100</span></div>
+      <div class="bar-wrap bar-b"><div class="bar-fill" id="res-cool-bar" style="width:100%"></div></div>
+    </div>
+    <div class="res-item">
+      <div class="res-label"><span>🔧 Health</span><span id="res-health-text">100/100</span></div>
+      <div class="bar-wrap bar-o"><div class="bar-fill" id="res-health-bar" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <!-- COIN SELECTOR -->
+  <div class="coin-sel">
+    <div class="coin-btn active" id="coin-BTC" onclick="selectCoin('BTC')">
+      <span class="c-sym">₿</span><span class="c-name">Bitcoin</span><span class="c-mult">x1.0</span>
+    </div>
+    <div class="coin-btn" id="coin-ETH" onclick="selectCoin('ETH')">
+      <span class="c-sym">Ξ</span><span class="c-name">Ethereum</span><span class="c-mult">x1.5</span>
+    </div>
+    <div class="coin-btn" id="coin-SOL" onclick="selectCoin('SOL')">
+      <span class="c-sym">◎</span><span class="c-name">Solana</span><span class="c-mult">x2.0</span>
+    </div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats">
+    <div class="stat-item">
+      <div class="stat-val font-title" id="stat-coins">0</div>
+      <div class="stat-label">HC COINS</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val font-title" id="stat-total">0</div>
+      <div class="stat-label">TOTAL MINED</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val font-title" id="stat-hr">1</div>
+      <div class="stat-label">H/s RATE</div>
+    </div>
+  </div>
+
+  <!-- TAB NAV -->
+  <div class="tab-nav">
+    <div class="tab-btn active" onclick="switchTab('mine')">⛏ MINE</div>
+    <div class="tab-btn" onclick="switchTab('rig')">🔧 RIG</div>
+    <div class="tab-btn" onclick="switchTab('quests')">📋 QUESTS</div>
+    <div class="tab-btn" onclick="switchTab('pvp')">⚔️ PVP</div>
+  </div>
+
+  <!-- ═══ MINE TAB ═══ -->
+  <div class="tab-content active" id="tab-mine">
+    <div class="block-prog">
+      <div class="block-label"><span>⛏ Block Progress</span><span id="block-text">0 / 100</span></div>
+      <div class="block-bar"><div class="block-fill" id="block-fill" style="width:0%"></div></div>
+    </div>
+    <div class="mine-grid">
+      <div class="rig-card" id="rig-card" onclick="doMine()">
+        <div class="orbit orbit-1"><div class="orbit-dot"></div></div>
+        <div class="orbit orbit-2"><div class="orbit-dot"></div></div>
+        <div class="rig-icon">⛏</div>
+        <div class="rig-label">TAP TO MINE</div>
+      </div>
+      <div class="sell-card" onclick="doSell()">
+        <div class="sell-icon">💰</div>
+        <div class="sell-label">SELL HC</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="sell-info">Bank your coins</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <div class="action-card" onclick="refillEnergy()">
+        <div class="action-icon">⚡</div>
+        <div class="action-name">Recharge</div>
+        <div class="action-cost">20 HC</div>
+      </div>
+      <div class="action-card" onclick="refillCooling()">
+        <div class="action-icon">❄️</div>
+        <div class="action-name">Cool Down</div>
+        <div class="action-cost">15 HC</div>
+      </div>
+      <div class="action-card" onclick="repairRig()">
+        <div class="action-icon">🔧</div>
+        <div class="action-name">Repair</div>
+        <div class="action-cost">30 HC</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIG (UPGRADE) TAB ═══ -->
+  <div class="tab-content" id="tab-rig">
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchSub('hw')">🖥️ Hardware</div>
+      <div class="sub-tab" onclick="switchSub('sw')">🔮 Software</div>
+      <div class="sub-tab" onclick="switchSub('def')">🛡️ Defense</div>
+    </div>
+    <div id="sub-hw"></div>
+    <div id="sub-sw" style="display:none"></div>
+    <div id="sub-def" style="display:none"></div>
+  </div>
+
+  <!-- ═══ QUESTS TAB ═══ -->
+  <div class="tab-content" id="tab-quests">
+    <div class="quest-timer">Resets in <span id="quest-countdown">--:--:--</span></div>
+    <div id="quest-list"></div>
+  </div>
+
+  <!-- ═══ PVP TAB ═══ -->
+  <div class="tab-content" id="tab-pvp">
+    <div class="pvp-rules">
+      ⚔️ <b>PvP Rules:</b><br>
+      Win → Steal 10% of enemy coins<br>
+      Lose → Lose 5% of your coins<br>
+      Win chance = your H/s vs enemy defense (20%-80%)<br>
+      Vault upgrade protects a % of your coins
+    </div>
+    <div class="pvp-result" id="pvp-result"></div>
+    <div class="pvp-cooldown" id="pvp-cooldown"></div>
+    <div id="enemy-list"></div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bnav-btn active" onclick="switchTab('mine')"><span class="bnav-icon">⛏</span>Mine</div>
+  <div class="bnav-btn" onclick="switchTab('rig')"><span class="bnav-icon">🔧</span>Rig</div>
+  <div class="bnav-btn" onclick="switchTab('quests')"><span class="bnav-icon">📋</span>Quests</div>
+  <div class="bnav-btn" onclick="switchTab('pvp')"><span class="bnav-icon">⚔️</span>PvP</div>
+</div>
+
+<!-- WALLET MODAL -->
+<div class="modal-overlay" id="wallet-modal" onclick="if(event.target===this)closeWallet()">
+  <div class="modal">
+    <div class="modal-title font-title">💰 WALLET</div>
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="switchWalletTab('overview')">Overview</div>
+      <div class="modal-tab" onclick="switchWalletTab('seed')">Seed Phrase</div>
+      <div class="modal-tab" onclick="switchWalletTab('pkey')">Private Key</div>
+    </div>
+    <div class="modal-pane active" id="wt-overview">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Address</div>
+      <div class="addr-display" id="w-addr">Loading...</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;margin-top:10px;">Network</div>
+      <div style="font-size:13px;">Ethereum Mainnet</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px;margin-top:10px;">Standard</div>
+      <div style="font-size:13px;">BIP-44 HD Wallet</div>
+    </div>
+    <div class="modal-pane" id="wt-seed">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center;">
+        ⚠️ Never share your seed phrase with anyone
+      </div>
+      <div class="seed-grid hidden-text" id="seed-grid"></div>
+      <button class="copy-btn" onclick="toggleReveal('seed')">👁 Tap to Reveal</button>
+      <button class="copy-btn" onclick="copySeed()" style="margin-top:6px;">📋 Copy Seed Phrase</button>
+    </div>
+    <div class="modal-pane" id="wt-pkey">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center;">
+        ⚠️ Never share your private key
+      </div>
+      <div class="pk-display hidden-text" id="pk-display">Loading...</div>
+      <button class="copy-btn" onclick="toggleReveal('pk')">👁 Tap to Reveal</button>
+      <button class="copy-btn" onclick="copyPK()" style="margin-top:6px;">📋 Copy Private Key</button>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
+        💡 <b>Import to MetaMask:</b><br>
+        1. Open MetaMask → Import Account<br>
+        2. Select "Private Key"<br>
+        3. Paste your key → Import
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BLOCK FOUND MODAL -->
+<div class="modal-overlay" id="block-modal" onclick="if(event.target===this)closeBlockModal()">
+  <div class="modal" style="text-align:center;">
+    <div class="block-modal-icon">🎉</div>
+    <div class="modal-title font-title">BLOCK FOUND!</div>
+    <div class="block-modal-reward" id="block-reward">+0 HC</div>
+    <div class="block-modal-sub" id="block-num">Block #0</div>
+    <button class="btn btn-g" onclick="closeBlockModal()" style="width:100%;margin-top:10px;">COLLECT</button>
+  </div>
+</div>
+
+<!-- ethers.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════
+   GAME STATE
+   ═══════════════════════════════════════════ */
+const DEFAULTS = {
+  coins:0, total:0, hashRate:1, best:0,
+  energy:100, maxEnergy:100,
+  cool:100, maxCool:100,
+  health:100, maxHealth:100,
+  blockProg:0, blockTarget:100, blocksFound:0,
+  clicks:0, autoMiners:0,
+  coin:'BTC',
+  coinMult:{BTC:1.0,ETH:1.5,SOL:2.0},
+  defenseRating:10,
+  pvpWins:0, pvpLosses:0, lastAttack:0,
+  quests:[], questDate:'',
+  sellCount:0, repairCount:0,
+  upg:{
+    gpu1:{l:0,max:10},gpu2:{l:0,max:8},asic:{l:0,max:5},rack:{l:0,max:3},
+    algo:{l:0,max:5},pool:{l:0,max:5},oc:{l:0,max:3},
+    shield:{l:0,max:5},firewall:{l:0,max:5},vault:{l:0,max:3}
+  }
+};
+
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+
+/* ═══════════════════════════════════════════
+   UPGRADE DEFINITIONS
+   ═══════════════════════════════════════════ */
+const UPGRADES = {
+  gpu1:  {icon:'🖥️', name:'GTX Mining GPU',     desc:'+2 H/s per level',             base:50,    mult:2.2, cat:'hw'},
+  gpu2:  {icon:'💻', name:'RTX Ultra GPU',       desc:'+8 H/s per level',             base:300,   mult:2.5, cat:'hw'},
+  asic:  {icon:'⚙️', name:'ASIC Miner',          desc:'+25 H/s + Auto Mining',        base:1500,  mult:3.0, cat:'hw'},
+  rack:  {icon:'🏗️', name:'Mining Farm Rack',    desc:'+100 H/s + Auto Mining',       base:10000, mult:4.0, cat:'hw'},
+  algo:  {icon:'🔮', name:'Optimized Algorithm', desc:'+15% efficiency per level',    base:200,   mult:2.8, cat:'sw'},
+  pool:  {icon:'🌊', name:'Mining Pool',         desc:'+20% block reward per level',  base:500,   mult:2.5, cat:'sw'},
+  oc:    {icon:'🚀', name:'GPU Overclock',       desc:'+50% hash rate per level',     base:2000,  mult:5.0, cat:'sw'},
+  shield:{icon:'🛡️', name:'Energy Shield',       desc:'+10 defense per level',        base:300,   mult:2.5, cat:'def'},
+  firewall:{icon:'🔒',name:'Firewall',           desc:'+20 defense per level',        base:800,   mult:3.0, cat:'def'},
+  vault: {icon:'🏦', name:'Coin Vault',          desc:'Protect 20% coins per level',  base:5000,  mult:4.0, cat:'def'}
+};
+
+/* ═══════════════════════════════════════════
+   ENEMIES
+   ═══════════════════════════════════════════ */
+const ENEMIES = [
+  {icon:'🐺',name:'CryptoWolf_99', hr:15, def:30,  coins:8420},
+  {icon:'👑',name:'MineKing_ETH',   hr:22, def:55,  coins:15300},
+  {icon:'👻',name:'SatoshiGhost',   hr:8,  def:15,  coins:3200},
+  {icon:'💎',name:'BlockchainBabe', hr:35, def:80,  coins:42000},
+  {icon:'⚙️',name:'ASICQueen',      hr:50, def:120, coins:98000},
+  {icon:'🤖',name:'NodeRunner77',   hr:12, def:20,  coins:5600},
+  {icon:'🐉',name:'HashDragon',     hr:100,def:200, coins:250000}
+];
+
+/* ═══════════════════════════════════════════
+   QUEST TEMPLATES
+   ═══════════════════════════════════════════ */
+const QUEST_TPL = [
+  {id:'mine',   name:'Hash Master', desc:'Mine {n} HC',      targets:[500,1000,2500,5000], rewardMult:0.5},
+  {id:'block',  name:'Block Hunter',desc:'Find {n} blocks',  targets:[1,3,5,10],           rewardMult:100},
+  {id:'click',  name:'Tap King',    desc:'Tap {n} times',    targets:[50,100,200,500],      rewardMult:2},
+  {id:'upgrade',name:'Engineer',    desc:'Buy {n} upgrades', targets:[1,2,3,5],             rewardMult:50},
+  {id:'sell',   name:'Trader',      desc:'Sell {n} times',   targets:[1,3,5],               rewardMult:30},
+  {id:'repair', name:'Mechanic',    desc:'Repair {n} times', targets:[1,2,3],               rewardMult:40},
+  {id:'pvpwin', name:'Raider',      desc:'Win {n} PvP',      targets:[1,2,3],               rewardMult:80}
+];
+
+/* ═══════════════════════════════════════════
+   MARKET SIMULATION
+   ═══════════════════════════════════════════ */
+let market = {
+  BTC:{price:64200, prev:64200},
+  ETH:{price:3450,  prev:3450},
+  SOL:{price:145,   prev:145}
+};
+
+function tickMarket(){
+  ['BTC','ETH','SOL'].forEach(c=>{
+    market[c].prev = market[c].price;
+    const vol = c==='BTC' ? 0.005 : c==='ETH' ? 0.008 : 0.015;
+    const change = (Math.random()-0.5)*2*vol;
+    market[c].price = Math.max(market[c].price * (1+change), 1);
+  });
+  updateTicker();
+  updateCoinMultipliers();
+}
+
+function updateCoinMultipliers(){
+  const btcRatio = market.BTC.price / 64200;
+  S.coinMult.BTC = 1.0 * btcRatio;
+  S.coinMult.ETH = 1.5 * (market.ETH.price / 3450);
+  S.coinMult.SOL = 2.0 * (market.SOL.price / 145);
+}
+
+function updateTicker(){
+  ['BTC','ETH','SOL'].forEach(c=>{
+    const m = market[c];
+    const chg = ((m.price - m.prev)/m.prev*100);
+    document.getElementById('tick-'+c+'-price').textContent = '$'+fmtPrice(m.price);
+    const chgEl = document.getElementById('tick-'+c+'-chg');
+    chgEl.textContent = (chg>=0?'+':'')+chg.toFixed(1)+'%';
+    chgEl.style.color = chg>=0 ? 'var(--g)' : 'var(--r)';
+  });
+}
+
+function fmtPrice(n){
+  if(n>=1000) return n.toLocaleString('en-US',{maximumFractionDigits:0});
+  return n.toFixed(2);
+}
+
+/* ═══════════════════════════════════════════
+   UTILITY FUNCTIONS
+   ═══════════════════════════════════════════ */
+function fmt(n){
+  if(n>=1e9) return (n/1e9).toFixed(1)+'B';
+  if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+  if(n>=1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
+}
+
+function uCost(id){
+  const u = UPGRADES[id];
+  return Math.floor(u.base * Math.pow(u.mult, S.upg[id].l));
+}
+
+function calcHashRate(){
+  let hr = 1;
+  hr += S.upg.gpu1.l * 2;
+  hr += S.upg.gpu2.l * 8;
+  hr += S.upg.asic.l * 25;
+  hr += S.upg.rack.l * 100;
+  // OC: +50% per level
+  hr *= (1 + S.upg.oc.l * 0.5);
+  S.hashRate = Math.floor(hr);
+}
+
+function calcDefense(){
+  S.defenseRating = 10 + S.upg.shield.l*10 + S.upg.firewall.l*20;
+}
+
+function calcAutoMiners(){
+  S.autoMiners = S.upg.asic.l + S.upg.rack.l;
+}
+
+/* ═══════════════════════════════════════════
+   SAVE / LOAD
+   ═══════════════════════════════════════════ */
+function save(){
+  try{
+    localStorage.setItem('hashrig_game_v3', JSON.stringify(S));
+  }catch(e){}
+}
+
+function load(){
+  try{
+    const d = localStorage.getItem('hashrig_game_v3');
+    if(d){
+      const parsed = JSON.parse(d);
+      // Deep merge to handle new fields
+      S = JSON.parse(JSON.stringify(DEFAULTS));
+      Object.keys(parsed).forEach(k=>{
+        if(k==='upg'){
+          Object.keys(parsed.upg).forEach(u=>{
+            if(S.upg[u]) S.upg[u].l = parsed.upg[u].l || 0;
+          });
+        } else if(k==='coinMult'){
+          // Recalculated from market
+        } else {
+          S[k] = parsed[k];
+        }
+      });
+      calcHashRate();
+      calcDefense();
+      calcAutoMiners();
+    }
+  }catch(e){}
+}
+
+/* ═══════════════════════════════════════════
+   MINING
+   ═══════════════════════════════════════════ */
+function doMine(){
+  if(S.energy <= 0){showToast('⚡ No energy! Recharge to continue mining.');return;}
+  if(S.health <= 0){showToast('🔧 Rig broken! Repair to continue mining.');return;}
+
+  // Resource drain
+  S.energy = Math.max(0, S.energy - 1);
+  S.cool = Math.max(0, S.cool - 0.8);
+  S.health = Math.max(0, S.health - 0.3);
+
+  // Cooling efficiency
+  const coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+  // Algo efficiency
+  const algoEff = 1 + S.upg.algo.l * 0.15;
+
+  const variance = 0.8 + Math.random()*0.4;
+  const gain = S.hashRate * S.coinMult[S.coin] * coolEff * algoEff * variance;
+
+  S.coins += gain;
+  S.total += gain;
+  S.best = Math.max(S.best, S.coins);
+  S.clicks++;
+
+  // Block progress
+  S.blockProg += S.hashRate;
+  if(S.blockProg >= S.blockTarget) foundBlock();
+
+  // Quest tracking
+  checkQuest('mine', gain);
+  checkQuest('click', 1);
+
+  // Visual feedback
+  spawnParticle('+' + fmt(gain));
+  const rig = document.getElementById('rig-card');
+  rig.classList.remove('mine-flash');
+  void rig.offsetWidth;
+  rig.classList.add('mine-flash');
+
+  updateUI();
+}
+
+function foundBlock(){
+  S.blockProg = 0;
+  S.blocksFound++;
+  S.blockTarget = Math.floor(100 * Math.pow(1.3, S.blocksFound));
+
+  const poolBonus = 1 + S.upg.pool.l * 0.2;
+  const reward = Math.floor((50 + S.blocksFound * 20) * poolBonus * S.coinMult[S.coin]);
+
+  S.coins += reward;
+  S.total += reward;
+  S.best = Math.max(S.best, S.coins);
+
+  checkQuest('block', 1);
+
+  // Show modal
+  document.getElementById('block-reward').textContent = '+' + fmt(reward) + ' HC';
+  document.getElementById('block-num').textContent = 'Block #' + S.blocksFound;
+  document.getElementById('block-modal').classList.add('show');
+}
+
+/* Auto Mining */
+let autoInterval = null;
+function startAutoMine(){
+  if(autoInterval) return;
+  autoInterval = setInterval(()=>{
+    if(S.autoMiners <= 0 || S.energy <= 0 || S.health <= 0) return;
+
+    // Slower resource drain for auto
+    S.energy = Math.max(0, S.energy - 0.3);
+    S.cool = Math.max(0, S.cool - 0.2);
+    S.health = Math.max(0, S.health - 0.1);
+
+    const coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+    const algoEff = 1 + S.upg.algo.l * 0.15;
+    const variance = 0.8 + Math.random()*0.4;
+    const gain = S.hashRate * 0.5 * S.coinMult[S.coin] * coolEff * algoEff * variance;
+
+    S.coins += gain;
+    S.total += gain;
+    S.best = Math.max(S.best, S.coins);
+
+    S.blockProg += S.hashRate * 0.5;
+    if(S.blockProg >= S.blockTarget) foundBlock();
+
+    checkQuest('mine', gain);
+    updateUI();
+  }, 1200);
+}
+
+/* ═══════════════════════════════════════════
+   RESOURCE ACTIONS
+   ═══════════════════════════════════════════ */
+function refillEnergy(){
+  if(S.coins < 20){showToast('Not enough HC!');return;}
+  S.coins -= 20;
+  S.energy = Math.min(S.maxEnergy, S.energy + 50);
+  showToast('⚡ +50 Energy');
+  updateUI();
+}
+
+function refillCooling(){
+  if(S.coins < 15){showToast('Not enough HC!');return;}
+  S.coins -= 15;
+  S.cool = S.maxCool;
+  showToast('❄️ Cooling restored');
+  updateUI();
+}
+
+function repairRig(){
+  if(S.coins < 30){showToast('Not enough HC!');return;}
+  S.coins -= 30;
+  S.health = S.maxHealth;
+  S.repairCount++;
+  checkQuest('repair', 1);
+  showToast('🔧 Rig repaired');
+  updateUI();
+}
+
+/* ═══════════════════════════════════════════
+   SELL
+   ═══════════════════════════════════════════ */
+function doSell(){
+  if(S.coins < 10){showToast('Need at least 10 HC to sell');return;}
+  const amount = S.coins;
+  S.coins = 0;
+  S.sellCount++;
+  checkQuest('sell', 1);
+  showToast('💰 Sold ' + fmt(amount) + ' HC');
+  updateUI();
+}
+
+/* ═══════════════════════════════════════════
+   COIN SELECTION
+   ═══════════════════════════════════════════ */
+function selectCoin(c){
+  S.coin = c;
+  document.querySelectorAll('.coin-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('coin-'+c).classList.add('active');
+  updateUI();
+}
+
+/* ═══════════════════════════════════════════
+   UPGRADES
+   ═══════════════════════════════════════════ */
+function buyUpgrade(id){
+  const cost = uCost(id);
+  if(S.coins < cost) return;
+  if(S.upg[id].l >= S.upg[id].max) return;
+
+  S.coins -= cost;
+  S.upg[id].l++;
+  checkQuest('upgrade', 1);
+
+  calcHashRate();
+  calcDefense();
+  calcAutoMiners();
+
+  if(S.autoMiners > 0) startAutoMine();
+
+  showToast('⬆️ ' + UPGRADES[id].name + ' → Lv.' + S.upg[id].l);
+  updateUI();
+  renderUpgrades();
+}
+
+function renderUpgrades(){
+  const cats = {hw:'sub-hw', sw:'sub-sw', def:'sub-def'};
+  Object.keys(cats).forEach(cat=>{
+    const container = document.getElementById(cats[cat]);
+    container.innerHTML = '';
+    Object.keys(UPGRADES).filter(id=>UPGRADES[id].cat===cat).forEach(id=>{
+      const u = UPGRADES[id];
+      const lv = S.upg[id].l;
+      const mx = S.upg[id].max;
+      const cost = uCost(id);
+      const maxed = lv >= mx;
+      const canBuy = S.coins >= cost && !maxed;
+
+      container.innerHTML += `
+        <div class="upg-card">
+          <div class="upg-icon">${u.icon}</div>
+          <div class="upg-info">
+            <div class="upg-name">${u.name}</div>
+            <div class="upg-desc">${u.desc}</div>
+            <div class="upg-lvl">Lv.${lv}/${mx}</div>
+          </div>
+          <div class="upg-buy">
+            <button class="btn btn-sm ${maxed?'':'btn-g'}" ${canBuy?'':'disabled'}
+              onclick="buyUpgrade('${id}')">
+              ${maxed ? 'MAX' : fmt(cost)+' HC'}
+            </button>
+          </div>
+        </div>`;
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════
+   DAILY QUESTS
+   ═══════════════════════════════════════════ */
+function todayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function generateQuests(){
+  const today = todayStr();
+  if(S.questDate === today && S.quests.length === 3) return;
+
+  S.questDate = today;
+  S.quests = [];
+
+  // Pick 3 unique quest types
+  const shuffled = [...QUEST_TPL].sort(()=>Math.random()-0.5);
+  for(let i=0;i<3;i++){
+    const tpl = shuffled[i];
+    const target = tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
+    S.quests.push({
+      id: tpl.id,
+      name: tpl.name,
+      desc: tpl.desc.replace('{n}', target),
+      target: target,
+      progress: 0,
+      reward: Math.floor(target * tpl.rewardMult),
+      done: false
+    });
+  }
+}
+
+function checkQuest(type, amount){
+  S.quests.forEach(q=>{
+    if(q.done || q.id !== type) return;
+    q.progress = Math.min(q.target, q.progress + amount);
+    if(q.progress >= q.target && !q.done){
+      q.done = true;
+      S.coins += q.reward;
+      S.total += q.reward;
+      showToast('📋 Quest complete! +' + fmt(q.reward) + ' HC');
+    }
+  });
+}
+
+function renderQuests(){
+  const container = document.getElementById('quest-list');
+  container.innerHTML = '';
+  S.quests.forEach(q=>{
+    const pct = Math.min(100, (q.progress/q.target)*100);
+    container.innerHTML += `
+      <div class="quest-card">
+        <div class="quest-head">
+          <div class="quest-name">${q.name}</div>
+          <div class="quest-reward">${q.done?'<span class="quest-done">DONE ✓</span>':'+'+fmt(q.reward)+' HC'}</div>
+        </div>
+        <div class="quest-desc">${q.desc}</div>
+        <div class="quest-prog">
+          <div class="bar-wrap bar-b" style="height:8px;"><div class="bar-fill" style="width:${pct}%"></div></div>
+          <div class="quest-prog-text">${fmt(q.progress)}/${fmt(q.target)}</div>
+        </div>
+      </div>`;
+  });
+}
+
+function updateQuestCountdown(){
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24,0,0,0);
+  const diff = midnight - now;
+  const h = Math.floor(diff/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const s = Math.floor((diff%60000)/1000);
+  document.getElementById('quest-countdown').textContent =
+    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+/* ═══════════════════════════════════════════
+   PVP
+   ═══════════════════════════════════════════ */
+function attack(idx){
+  const now = Date.now();
+  if(now - S.lastAttack < 60000){
+    const rem = Math.ceil((60000 - (now - S.lastAttack))/1000);
+    showToast('⏳ Cooldown: '+rem+'s');
+    return;
+  }
+
+  const enemy = ENEMIES[idx];
+  let winChance = S.hashRate / (S.hashRate + enemy.def);
+  winChance = Math.max(0.2, Math.min(0.8, winChance));
+
+  S.lastAttack = now;
+  const resultEl = document.getElementById('pvp-result');
+  resultEl.classList.remove('win','lose');
+
+  if(Math.random() < winChance){
+    // WIN
+    const stolen = Math.floor(enemy.coins * 0.1);
+    S.coins += stolen;
+    S.total += stolen;
+    S.pvpWins++;
+    checkQuest('pvpwin', 1);
+    resultEl.className = 'pvp-result show win';
+    resultEl.innerHTML = '⚔️ <b>VICTORY!</b><br>Stole ' + fmt(stolen) + ' HC from ' + enemy.name;
+  } else {
+    // LOSE
+    const vaultProt = S.upg.vault.l * 0.2;
+    const vulnerable = S.coins * (1 - vaultProt);
+    const lost = Math.floor(vulnerable * 0.05);
+    S.coins = Math.max(0, S.coins - lost);
+    S.pvpLosses++;
+    resultEl.className = 'pvp-result show lose';
+    resultEl.innerHTML = '💀 <b>DEFEATED!</b><br>Lost ' + fmt(lost) + ' HC to ' + enemy.name;
+  }
+
+  updateUI();
+  renderEnemies();
+}
+
+function renderEnemies(){
+  const container = document.getElementById('enemy-list');
+  container.innerHTML = '';
+  const cdActive = Date.now() - S.lastAttack < 60000;
+
+  ENEMIES.forEach((e,i)=>{
+    let winPct = S.hashRate / (S.hashRate + e.def);
+    winPct = Math.max(0.2, Math.min(0.8, winPct));
+    const pctNum = Math.round(winPct*100);
+    const color = pctNum >= 60 ? 'var(--g)' : pctNum >= 40 ? 'var(--y)' : 'var(--r)';
+
+    container.innerHTML += `
+      <div class="enemy-card" onclick="attack(${i})" ${cdActive?'style="opacity:.5;pointer-events:none"':''}>
+        <div class="enemy-icon">${e.icon}</div>
+        <div class="enemy-info">
+          <div class="enemy-name">${e.name}</div>
+          <div class="enemy-stats">${e.hr} H/s · ${e.def} DEF · ${fmt(e.coins)} HC</div>
+        </div>
+        <div class="enemy-win" style="color:${color}">${pctNum}%</div>
+      </div>`;
+  });
+}
+
+function updatePvpCooldown(){
+  const el = document.getElementById('pvp-cooldown');
+  const rem = 60000 - (Date.now() - S.lastAttack);
+  if(rem > 0){
+    el.textContent = '⏳ Cooldown: ' + Math.ceil(rem/1000) + 's';
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   WALLET
+   ═══════════════════════════════════════════ */
+async function initWallet(){
+  try{
+    const stored = localStorage.getItem('hashrig_wallet_v3');
+    if(stored){
+      const data = JSON.parse(stored);
+      window._wlt = ethers.Wallet.fromPhrase(data.mnemonic);
+    } else {
+      const wallet = ethers.Wallet.createRandom();
+      window._wlt = wallet;
+      localStorage.setItem('hashrig_wallet_v3', JSON.stringify({
+        mnemonic: wallet.mnemonic.phrase
+      }));
+    }
+  }catch(e){
+    console.warn('Wallet init failed:', e);
+    window._wlt = null;
+  }
+}
+
+function openWallet(){
+  const modal = document.getElementById('wallet-modal');
+  modal.classList.add('show');
+
+  // Reset reveals
+  document.getElementById('seed-grid').classList.add('hidden-text');
+  document.getElementById('seed-grid').classList.remove('revealed');
+  document.getElementById('pk-display').classList.add('hidden-text');
+  document.getElementById('pk-display').classList.remove('revealed');
+
+  if(!window._wlt) {
+    document.getElementById('w-addr').textContent = 'Wallet unavailable';
+    return;
+  }
+
+  const addr = window._wlt.address;
+  document.getElementById('w-addr').textContent = addr;
+
+  // Seed grid
+  const words = window._wlt.mnemonic.phrase.split(' ');
+  const grid = document.getElementById('seed-grid');
+  grid.innerHTML = '';
+  words.forEach((w,i)=>{
+    grid.innerHTML += `<div class="seed-word"><span class="sw-num">${i+1}</span>${w}</div>`;
+  });
+
+  // Private key
+  document.getElementById('pk-display').textContent = window._wlt.privateKey;
+
+  switchWalletTab('overview');
+}
+
+function closeWallet(){
+  document.getElementById('wallet-modal').classList.remove('show');
+  // Reset reveals on close
+  document.getElementById('seed-grid').classList.add('hidden-text');
+  document.getElementById('seed-grid').classList.remove('revealed');
+  document.getElementById('pk-display').classList.add('hidden-text');
+  document.getElementById('pk-display').classList.remove('revealed');
+}
+
+function switchWalletTab(tab){
+  document.querySelectorAll('#wallet-modal .modal-tab').forEach((el,i)=>{
+    el.classList.toggle('active', ['overview','seed','pkey'][i]===tab);
+  });
+  document.querySelectorAll('#wallet-modal .modal-pane').forEach((el,i)=>{
+    el.classList.toggle('active', ['overview','seed','pkey'][i]===tab);
+  });
+}
+
+function toggleReveal(type){
+  if(type==='seed'){
+    const el = document.getElementById('seed-grid');
+    el.classList.toggle('hidden-text');
+    el.classList.toggle('revealed');
+  } else {
+    const el = document.getElementById('pk-display');
+    el.classList.toggle('hidden-text');
+    el.classList.toggle('revealed');
+  }
+}
+
+function copySeed(){
+  if(!window._wlt) return;
+  navigator.clipboard.writeText(window._wlt.mnemonic.phrase).then(()=>showToast('📋 Seed copied'));
+}
+
+function copyPK(){
+  if(!window._wlt) return;
+  navigator.clipboard.writeText(window._wlt.privateKey).then(()=>showToast('📋 Key copied'));
+}
+
+function closeBlockModal(){
+  document.getElementById('block-modal').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════
+   TAB SWITCHING
+   ═══════════════════════════════════════════ */
+function switchTab(tab){
+  const tabs = ['mine','rig','quests','pvp'];
+  tabs.forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll('.tab-btn').forEach((el,i)=>{
+    el.classList.toggle('active', tabs[i]===tab);
+  });
+  document.querySelectorAll('.bnav-btn').forEach((el,i)=>{
+    el.classList.toggle('active', tabs[i]===tab);
+  });
+
+  if(tab==='rig') renderUpgrades();
+  if(tab==='quests') renderQuests();
+  if(tab==='pvp') renderEnemies();
+}
+
+function switchSub(sub){
+  ['hw','sw','def'].forEach(s=>{
+    document.getElementById('sub-'+s).style.display = s===sub ? 'block' : 'none';
+  });
+  document.querySelectorAll('.sub-tab').forEach((el,i)=>{
+    el.classList.toggle('active', ['hw','sw','def'][i]===sub);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   UI UPDATE
+   ═══════════════════════════════════════════ */
+function updateUI(){
+  // Stats
+  document.getElementById('stat-coins').textContent = fmt(S.coins);
+  document.getElementById('stat-total').textContent = fmt(S.total);
+  document.getElementById('stat-hr').textContent = fmt(S.hashRate);
+
+  // Resources
+  document.getElementById('res-energy-text').textContent = Math.floor(S.energy)+'/'+S.maxEnergy;
+  document.getElementById('res-energy-bar').style.width = (S.energy/S.maxEnergy*100)+'%';
+  document.getElementById('res-cool-text').textContent = Math.floor(S.cool)+'/'+S.maxCool;
+  document.getElementById('res-cool-bar').style.width = (S.cool/S.maxCool*100)+'%';
+  document.getElementById('res-health-text').textContent = Math.floor(S.health)+'/'+S.maxHealth;
+  document.getElementById('res-health-bar').style.width = (S.health/S.maxHealth*100)+'%';
+
+  // Block progress
+  const blockPct = Math.min(100, S.blockProg/S.blockTarget*100);
+  document.getElementById('block-fill').style.width = blockPct+'%';
+  document.getElementById('block-text').textContent = fmt(S.blockProg)+' / '+fmt(S.blockTarget);
+
+  // Coin multipliers in selector
+  document.querySelector('#coin-BTC .c-mult').textContent = 'x'+S.coinMult.BTC.toFixed(2);
+  document.querySelector('#coin-ETH .c-mult').textContent = 'x'+S.coinMult.ETH.toFixed(2);
+  document.querySelector('#coin-SOL .c-mult').textContent = 'x'+S.coinMult.SOL.toFixed(2);
+
+  // Resource bar colors
+  const ebar = document.getElementById('res-energy-bar');
+  ebar.style.background = S.energy < 20 ? 'var(--r)' : 'var(--g)';
+  const cbar = document.getElementById('res-cool-bar');
+  cbar.style.background = S.cool < 20 ? 'var(--r)' : 'var(--b)';
+  const hbar = document.getElementById('res-health-bar');
+  hbar.style.background = S.health < 20 ? 'var(--r)' : 'var(--o)';
+}
+
+/* ═══════════════════════════════════════════
+   PARTICLES + TOAST
+   ═══════════════════════════════════════════ */
+function spawnParticle(text){
+  const el = document.createElement('div');
+  el.className = 'particle';
+  el.textContent = text;
+  const rig = document.getElementById('rig-card');
+  const rect = rig.getBoundingClientRect();
+  el.style.left = (rect.left + rect.width/2 - 20) + 'px';
+  el.style.top = (rect.top - 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 900);
+}
+
+let toastTimeout = null;
+function showToast(msg){
+  let toast = document.getElementById('toast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.style.cssText = `
+      position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:500;
+      background:var(--s1);border:1px solid var(--g);border-radius:8px;
+      padding:10px 20px;font-size:13px;color:var(--g);
+      font-family:'Share Tech Mono',monospace;box-shadow:var(--gg);
+      transition:opacity .3s;pointer-events:none;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>{toast.style.opacity='0';},2000);
+}
+
+/* ═══════════════════════════════════════════
+   KEYBOARD
+   ═══════════════════════════════════════════ */
+document.addEventListener('keydown', e=>{
+  if(e.code === 'Space' && !e.repeat){
+    e.preventDefault();
+    doMine();
+  }
+});
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+async function init(){
+  load();
+  generateQuests();
+  calcHashRate();
+  calcDefense();
+  calcAutoMiners();
+  updateUI();
+  renderUpgrades();
+  renderQuests();
+  renderEnemies();
+
+  await initWallet();
+
+  if(S.autoMiners > 0) startAutoMine();
+
+  // Auto-save every 8 seconds
+  setInterval(save, 8000);
+
+  // Market ticker every 4 seconds
+  setInterval(tickMarket, 4000);
+
+  // Quest countdown every second
+  setInterval(updateQuestCountdown, 1000);
+  updateQuestCountdown();
+
+  // PvP cooldown check every second
+  setInterval(()=>{updatePvpCooldown();}, 1000);
+}
+
+init();
+</script>
+</body>
+</html>
