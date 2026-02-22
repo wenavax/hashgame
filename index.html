@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com; upgrade-insecure-requests">
 <title>HashRig — Crypto Mining Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -715,41 +715,57 @@ let _seedRevealed = false;
 let _pkRevealed = false;
 
 /* ═══════════════════════════════════════════
-   MARKET SIMULATION
+   LIVE MARKET — Binance Public API
    ═══════════════════════════════════════════ */
-let market = {
-  BTC:{price:64200, prev:64200},
-  ETH:{price:3450,  prev:3450},
-  SOL:{price:145,   prev:145}
+var BINANCE_SYMBOLS = {BTC:'BTCUSDT', ETH:'ETHUSDT', SOL:'SOLUSDT'};
+var BASE_PRICES = {BTC:64200, ETH:3450, SOL:145};
+
+var market = {
+  BTC:{price:64200, chg24:0},
+  ETH:{price:3450,  chg24:0},
+  SOL:{price:145,   chg24:0}
 };
 
-function tickMarket(){
-  ['BTC','ETH','SOL'].forEach(function(c){
-    market[c].prev = market[c].price;
-    var vol = c==='BTC' ? 0.005 : c==='ETH' ? 0.008 : 0.015;
-    var change = (Math.random()-0.5)*2*vol;
-    market[c].price = Math.max(market[c].price * (1+change), 1);
-  });
+async function tickMarket(){
+  try{
+    var symbols = ['BTCUSDT','ETHUSDT','SOLUSDT'];
+    var url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent(JSON.stringify(symbols));
+    var resp = await fetch(url);
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
+
+    data.forEach(function(t){
+      var coin = Object.keys(BINANCE_SYMBOLS).find(function(c){return BINANCE_SYMBOLS[c]===t.symbol;});
+      if(!coin) return;
+      market[coin].price = parseFloat(t.lastPrice);
+      market[coin].chg24 = parseFloat(t.priceChangePercent);
+    });
+  }catch(e){
+    /* Fallback: small random walk if API fails */
+    ['BTC','ETH','SOL'].forEach(function(c){
+      var vol = c==='BTC' ? 0.002 : c==='ETH' ? 0.003 : 0.005;
+      market[c].price = Math.max(market[c].price * (1 + (Math.random()-0.5)*2*vol), 1);
+    });
+  }
   updateTicker();
   updateCoinMultipliers();
 }
 
 function updateCoinMultipliers(){
   S.coinMult = {
-    BTC: 1.0 * (market.BTC.price / 64200),
-    ETH: 1.5 * (market.ETH.price / 3450),
-    SOL: 2.0 * (market.SOL.price / 145)
+    BTC: 1.0 * (market.BTC.price / BASE_PRICES.BTC),
+    ETH: 1.5 * (market.ETH.price / BASE_PRICES.ETH),
+    SOL: 2.0 * (market.SOL.price / BASE_PRICES.SOL)
   };
 }
 
 function updateTicker(){
   ['BTC','ETH','SOL'].forEach(function(c){
     var m = market[c];
-    var chg = ((m.price - m.prev)/m.prev*100);
     document.getElementById('tick-'+c+'-price').textContent = '$'+fmtPrice(m.price);
     var chgEl = document.getElementById('tick-'+c+'-chg');
-    chgEl.textContent = (chg>=0?'+':'')+chg.toFixed(1)+'%';
-    chgEl.style.color = chg>=0 ? 'var(--g)' : 'var(--r)';
+    chgEl.textContent = (m.chg24>=0?'+':'')+m.chg24.toFixed(2)+'%';
+    chgEl.style.color = m.chg24>=0 ? 'var(--g)' : 'var(--r)';
   });
 }
 
@@ -1632,7 +1648,7 @@ async function init(){
   if(S.autoMiners > 0) startAutoMine();
 
   setInterval(save, 8000);
-  setInterval(tickMarket, 4000);
+  setInterval(tickMarket, 10000);
   setInterval(updateQuestCountdown, 1000);
   updateQuestCountdown();
   setInterval(updatePvpCooldown, 1000);
