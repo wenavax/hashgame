@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; upgrade-insecure-requests">
 <title>HashRig — Crypto Mining Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -340,8 +341,6 @@ body::after{
   padding:8px 4px;text-align:center;font-size:12px;
 }
 .seed-word .sw-num{font-size:9px;color:var(--muted);display:block;margin-bottom:1px;}
-.hidden-text{filter:blur(6px);transition:filter .3s;}
-.revealed{filter:none;}
 
 .addr-display{
   background:var(--s2);border:1px solid var(--border);border-radius:8px;
@@ -402,7 +401,7 @@ body::after{
   <!-- HEADER -->
   <div class="header">
     <div class="logo font-title">HASHRIG</div>
-    <button class="wallet-btn" onclick="openWallet()">💰 WALLET</button>
+    <button class="wallet-btn" id="btn-wallet">💰 WALLET</button>
   </div>
 
   <!-- TICKER -->
@@ -442,13 +441,13 @@ body::after{
 
   <!-- COIN SELECTOR -->
   <div class="coin-sel">
-    <div class="coin-btn active" id="coin-BTC" onclick="selectCoin('BTC')">
+    <div class="coin-btn active" id="coin-BTC" data-coin="BTC">
       <span class="c-sym">₿</span><span class="c-name">Bitcoin</span><span class="c-mult">x1.0</span>
     </div>
-    <div class="coin-btn" id="coin-ETH" onclick="selectCoin('ETH')">
+    <div class="coin-btn" id="coin-ETH" data-coin="ETH">
       <span class="c-sym">Ξ</span><span class="c-name">Ethereum</span><span class="c-mult">x1.5</span>
     </div>
-    <div class="coin-btn" id="coin-SOL" onclick="selectCoin('SOL')">
+    <div class="coin-btn" id="coin-SOL" data-coin="SOL">
       <span class="c-sym">◎</span><span class="c-name">Solana</span><span class="c-mult">x2.0</span>
     </div>
   </div>
@@ -470,11 +469,11 @@ body::after{
   </div>
 
   <!-- TAB NAV -->
-  <div class="tab-nav">
-    <div class="tab-btn active" onclick="switchTab('mine')">⛏ MINE</div>
-    <div class="tab-btn" onclick="switchTab('rig')">🔧 RIG</div>
-    <div class="tab-btn" onclick="switchTab('quests')">📋 QUESTS</div>
-    <div class="tab-btn" onclick="switchTab('pvp')">⚔️ PVP</div>
+  <div class="tab-nav" id="tab-nav">
+    <div class="tab-btn active" data-tab="mine">⛏ MINE</div>
+    <div class="tab-btn" data-tab="rig">🔧 RIG</div>
+    <div class="tab-btn" data-tab="quests">📋 QUESTS</div>
+    <div class="tab-btn" data-tab="pvp">⚔️ PVP</div>
   </div>
 
   <!-- ═══ MINE TAB ═══ -->
@@ -484,30 +483,30 @@ body::after{
       <div class="block-bar"><div class="block-fill" id="block-fill" style="width:0%"></div></div>
     </div>
     <div class="mine-grid">
-      <div class="rig-card" id="rig-card" onclick="doMine()">
+      <div class="rig-card" id="rig-card">
         <div class="orbit orbit-1"><div class="orbit-dot"></div></div>
         <div class="orbit orbit-2"><div class="orbit-dot"></div></div>
         <div class="rig-icon">⛏</div>
         <div class="rig-label">TAP TO MINE</div>
       </div>
-      <div class="sell-card" onclick="doSell()">
+      <div class="sell-card" id="sell-card">
         <div class="sell-icon">💰</div>
         <div class="sell-label">SELL HC</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="sell-info">Bank your coins</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;" id="sell-info">+10% bonus</div>
       </div>
     </div>
     <div class="action-row">
-      <div class="action-card" onclick="refillEnergy()">
+      <div class="action-card" id="btn-energy">
         <div class="action-icon">⚡</div>
         <div class="action-name">Recharge</div>
         <div class="action-cost">20 HC</div>
       </div>
-      <div class="action-card" onclick="refillCooling()">
+      <div class="action-card" id="btn-cool">
         <div class="action-icon">❄️</div>
         <div class="action-name">Cool Down</div>
         <div class="action-cost">15 HC</div>
       </div>
-      <div class="action-card" onclick="repairRig()">
+      <div class="action-card" id="btn-repair">
         <div class="action-icon">🔧</div>
         <div class="action-name">Repair</div>
         <div class="action-cost">30 HC</div>
@@ -517,10 +516,10 @@ body::after{
 
   <!-- ═══ RIG (UPGRADE) TAB ═══ -->
   <div class="tab-content" id="tab-rig">
-    <div class="sub-tabs">
-      <div class="sub-tab active" onclick="switchSub('hw')">🖥️ Hardware</div>
-      <div class="sub-tab" onclick="switchSub('sw')">🔮 Software</div>
-      <div class="sub-tab" onclick="switchSub('def')">🛡️ Defense</div>
+    <div class="sub-tabs" id="sub-tabs">
+      <div class="sub-tab active" data-sub="hw">🖥️ Hardware</div>
+      <div class="sub-tab" data-sub="sw">🔮 Software</div>
+      <div class="sub-tab" data-sub="def">🛡️ Defense</div>
     </div>
     <div id="sub-hw"></div>
     <div id="sub-sw" style="display:none"></div>
@@ -550,21 +549,21 @@ body::after{
 </div><!-- /app -->
 
 <!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <div class="bnav-btn active" onclick="switchTab('mine')"><span class="bnav-icon">⛏</span>Mine</div>
-  <div class="bnav-btn" onclick="switchTab('rig')"><span class="bnav-icon">🔧</span>Rig</div>
-  <div class="bnav-btn" onclick="switchTab('quests')"><span class="bnav-icon">📋</span>Quests</div>
-  <div class="bnav-btn" onclick="switchTab('pvp')"><span class="bnav-icon">⚔️</span>PvP</div>
+<div class="bottom-nav" id="bottom-nav">
+  <div class="bnav-btn active" data-tab="mine"><span class="bnav-icon">⛏</span>Mine</div>
+  <div class="bnav-btn" data-tab="rig"><span class="bnav-icon">🔧</span>Rig</div>
+  <div class="bnav-btn" data-tab="quests"><span class="bnav-icon">📋</span>Quests</div>
+  <div class="bnav-btn" data-tab="pvp"><span class="bnav-icon">⚔️</span>PvP</div>
 </div>
 
 <!-- WALLET MODAL -->
-<div class="modal-overlay" id="wallet-modal" onclick="if(event.target===this)closeWallet()">
+<div class="modal-overlay" id="wallet-modal">
   <div class="modal">
     <div class="modal-title font-title">💰 WALLET</div>
-    <div class="modal-tabs">
-      <div class="modal-tab active" onclick="switchWalletTab('overview')">Overview</div>
-      <div class="modal-tab" onclick="switchWalletTab('seed')">Seed Phrase</div>
-      <div class="modal-tab" onclick="switchWalletTab('pkey')">Private Key</div>
+    <div class="modal-tabs" id="wallet-tabs">
+      <div class="modal-tab active" data-wtab="overview">Overview</div>
+      <div class="modal-tab" data-wtab="seed">Seed Phrase</div>
+      <div class="modal-tab" data-wtab="pkey">Private Key</div>
     </div>
     <div class="modal-pane active" id="wt-overview">
       <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Address</div>
@@ -575,20 +574,20 @@ body::after{
       <div style="font-size:13px;">BIP-44 HD Wallet</div>
     </div>
     <div class="modal-pane" id="wt-seed">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center;">
+      <div style="font-size:12px;color:var(--r);margin-bottom:6px;text-align:center;">
         ⚠️ Never share your seed phrase with anyone
       </div>
-      <div class="seed-grid hidden-text" id="seed-grid"></div>
-      <button class="copy-btn" onclick="toggleReveal('seed')">👁 Tap to Reveal</button>
-      <button class="copy-btn" onclick="copySeed()" style="margin-top:6px;">📋 Copy Seed Phrase</button>
+      <div class="seed-grid" id="seed-grid"></div>
+      <button class="copy-btn" id="btn-reveal-seed">👁 Tap to Reveal</button>
+      <button class="copy-btn" id="btn-copy-seed" style="margin-top:6px;">📋 Copy Seed Phrase</button>
     </div>
     <div class="modal-pane" id="wt-pkey">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center;">
+      <div style="font-size:12px;color:var(--r);margin-bottom:6px;text-align:center;">
         ⚠️ Never share your private key
       </div>
-      <div class="pk-display hidden-text" id="pk-display">Loading...</div>
-      <button class="copy-btn" onclick="toggleReveal('pk')">👁 Tap to Reveal</button>
-      <button class="copy-btn" onclick="copyPK()" style="margin-top:6px;">📋 Copy Private Key</button>
+      <div class="pk-display" id="pk-display">●●●●●●●●●●●●●●●●</div>
+      <button class="copy-btn" id="btn-reveal-pk">👁 Tap to Reveal</button>
+      <button class="copy-btn" id="btn-copy-pk" style="margin-top:6px;">📋 Copy Private Key</button>
       <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;">
         💡 <b>Import to MetaMask:</b><br>
         1. Open MetaMask → Import Account<br>
@@ -600,24 +599,50 @@ body::after{
 </div>
 
 <!-- BLOCK FOUND MODAL -->
-<div class="modal-overlay" id="block-modal" onclick="if(event.target===this)closeBlockModal()">
+<div class="modal-overlay" id="block-modal">
   <div class="modal" style="text-align:center;">
     <div class="block-modal-icon">🎉</div>
     <div class="modal-title font-title">BLOCK FOUND!</div>
     <div class="block-modal-reward" id="block-reward">+0 HC</div>
     <div class="block-modal-sub" id="block-num">Block #0</div>
-    <button class="btn btn-g" onclick="closeBlockModal()" style="width:100%;margin-top:10px;">COLLECT</button>
+    <button class="btn btn-g" id="btn-collect-block" style="width:100%;margin-top:10px;">COLLECT</button>
   </div>
 </div>
 
-<!-- ethers.js CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<!-- ethers.js CDN with SRI -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"
+        integrity="sha384-6Zl0Pc8zjSz8KvmNeXRvUQgY4ryFb+BwDvKCmLYcBME0joAaru491tQgi9B7zsMM"
+        crossorigin="anonymous"></script>
 
 <script>
 /* ═══════════════════════════════════════════
-   GAME STATE
+   HASHRIG v1.1 — SECURITY HARDENED
+   All game logic wrapped in IIFE to prevent
+   global scope manipulation.
    ═══════════════════════════════════════════ */
-const DEFAULTS = {
+(function(){
+'use strict';
+
+/* ─── Deep Freeze Utility ─── */
+function deepFreeze(obj){
+  Object.freeze(obj);
+  Object.keys(obj).forEach(k=>{
+    if(obj[k] && typeof obj[k]==='object' && !Object.isFrozen(obj[k])) deepFreeze(obj[k]);
+  });
+  return obj;
+}
+
+/* ─── HTML Escape for safe text rendering ─── */
+function esc(str){
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+/* ═══════════════════════════════════════════
+   CONSTANTS (Frozen — immutable)
+   ═══════════════════════════════════════════ */
+const DEFAULTS = deepFreeze({
   coins:0, total:0, hashRate:1, best:0,
   energy:100, maxEnergy:100,
   cool:100, maxCool:100,
@@ -635,14 +660,9 @@ const DEFAULTS = {
     algo:{l:0,max:5},pool:{l:0,max:5},oc:{l:0,max:3},
     shield:{l:0,max:5},firewall:{l:0,max:5},vault:{l:0,max:3}
   }
-};
+});
 
-let S = JSON.parse(JSON.stringify(DEFAULTS));
-
-/* ═══════════════════════════════════════════
-   UPGRADE DEFINITIONS
-   ═══════════════════════════════════════════ */
-const UPGRADES = {
+const UPGRADES = deepFreeze({
   gpu1:  {icon:'🖥️', name:'GTX Mining GPU',     desc:'+2 H/s per level',             base:50,    mult:2.2, cat:'hw'},
   gpu2:  {icon:'💻', name:'RTX Ultra GPU',       desc:'+8 H/s per level',             base:300,   mult:2.5, cat:'hw'},
   asic:  {icon:'⚙️', name:'ASIC Miner',          desc:'+25 H/s + Auto Mining',        base:1500,  mult:3.0, cat:'hw'},
@@ -653,12 +673,9 @@ const UPGRADES = {
   shield:{icon:'🛡️', name:'Energy Shield',       desc:'+10 defense per level',        base:300,   mult:2.5, cat:'def'},
   firewall:{icon:'🔒',name:'Firewall',           desc:'+20 defense per level',        base:800,   mult:3.0, cat:'def'},
   vault: {icon:'🏦', name:'Coin Vault',          desc:'Protect 20% coins per level',  base:5000,  mult:4.0, cat:'def'}
-};
+});
 
-/* ═══════════════════════════════════════════
-   ENEMIES
-   ═══════════════════════════════════════════ */
-const ENEMIES = [
+const ENEMIES = deepFreeze([
   {icon:'🐺',name:'CryptoWolf_99', hr:15, def:30,  coins:8420},
   {icon:'👑',name:'MineKing_ETH',   hr:22, def:55,  coins:15300},
   {icon:'👻',name:'SatoshiGhost',   hr:8,  def:15,  coins:3200},
@@ -666,12 +683,9 @@ const ENEMIES = [
   {icon:'⚙️',name:'ASICQueen',      hr:50, def:120, coins:98000},
   {icon:'🤖',name:'NodeRunner77',   hr:12, def:20,  coins:5600},
   {icon:'🐉',name:'HashDragon',     hr:100,def:200, coins:250000}
-];
+]);
 
-/* ═══════════════════════════════════════════
-   QUEST TEMPLATES
-   ═══════════════════════════════════════════ */
-const QUEST_TPL = [
+const QUEST_TPL = deepFreeze([
   {id:'mine',   name:'Hash Master', desc:'Mine {n} HC',      targets:[500,1000,2500,5000], rewardMult:0.5},
   {id:'block',  name:'Block Hunter',desc:'Find {n} blocks',  targets:[1,3,5,10],           rewardMult:100},
   {id:'click',  name:'Tap King',    desc:'Tap {n} times',    targets:[50,100,200,500],      rewardMult:2},
@@ -679,7 +693,26 @@ const QUEST_TPL = [
   {id:'sell',   name:'Trader',      desc:'Sell {n} times',   targets:[1,3,5],               rewardMult:30},
   {id:'repair', name:'Mechanic',    desc:'Repair {n} times', targets:[1,2,3],               rewardMult:40},
   {id:'pvpwin', name:'Raider',      desc:'Win {n} PvP',      targets:[1,2,3],               rewardMult:80}
+]);
+
+/* Whitelisted state keys for safe loading */
+const STATE_KEYS = [
+  'coins','total','hashRate','best',
+  'energy','maxEnergy','cool','maxCool','health','maxHealth',
+  'blockProg','blockTarget','blocksFound','clicks','autoMiners',
+  'coin','defenseRating','pvpWins','pvpLosses','lastAttack',
+  'quests','questDate','sellCount','repairCount'
 ];
+
+/* ═══════════════════════════════════════════
+   GAME STATE (closure-scoped, not on window)
+   ═══════════════════════════════════════════ */
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+
+/* Wallet stored in closure — never on window */
+let _wallet = null;
+let _seedRevealed = false;
+let _pkRevealed = false;
 
 /* ═══════════════════════════════════════════
    MARKET SIMULATION
@@ -691,10 +724,10 @@ let market = {
 };
 
 function tickMarket(){
-  ['BTC','ETH','SOL'].forEach(c=>{
+  ['BTC','ETH','SOL'].forEach(function(c){
     market[c].prev = market[c].price;
-    const vol = c==='BTC' ? 0.005 : c==='ETH' ? 0.008 : 0.015;
-    const change = (Math.random()-0.5)*2*vol;
+    var vol = c==='BTC' ? 0.005 : c==='ETH' ? 0.008 : 0.015;
+    var change = (Math.random()-0.5)*2*vol;
     market[c].price = Math.max(market[c].price * (1+change), 1);
   });
   updateTicker();
@@ -702,18 +735,19 @@ function tickMarket(){
 }
 
 function updateCoinMultipliers(){
-  const btcRatio = market.BTC.price / 64200;
-  S.coinMult.BTC = 1.0 * btcRatio;
-  S.coinMult.ETH = 1.5 * (market.ETH.price / 3450);
-  S.coinMult.SOL = 2.0 * (market.SOL.price / 145);
+  S.coinMult = {
+    BTC: 1.0 * (market.BTC.price / 64200),
+    ETH: 1.5 * (market.ETH.price / 3450),
+    SOL: 2.0 * (market.SOL.price / 145)
+  };
 }
 
 function updateTicker(){
-  ['BTC','ETH','SOL'].forEach(c=>{
-    const m = market[c];
-    const chg = ((m.price - m.prev)/m.prev*100);
+  ['BTC','ETH','SOL'].forEach(function(c){
+    var m = market[c];
+    var chg = ((m.price - m.prev)/m.prev*100);
     document.getElementById('tick-'+c+'-price').textContent = '$'+fmtPrice(m.price);
-    const chgEl = document.getElementById('tick-'+c+'-chg');
+    var chgEl = document.getElementById('tick-'+c+'-chg');
     chgEl.textContent = (chg>=0?'+':'')+chg.toFixed(1)+'%';
     chgEl.style.color = chg>=0 ? 'var(--g)' : 'var(--r)';
   });
@@ -735,17 +769,15 @@ function fmt(n){
 }
 
 function uCost(id){
-  const u = UPGRADES[id];
-  return Math.floor(u.base * Math.pow(u.mult, S.upg[id].l));
+  return Math.floor(UPGRADES[id].base * Math.pow(UPGRADES[id].mult, S.upg[id].l));
 }
 
 function calcHashRate(){
-  let hr = 1;
+  var hr = 1;
   hr += S.upg.gpu1.l * 2;
   hr += S.upg.gpu2.l * 8;
   hr += S.upg.asic.l * 25;
   hr += S.upg.rack.l * 100;
-  // OC: +50% per level
   hr *= (1 + S.upg.oc.l * 0.5);
   S.hashRate = Math.floor(hr);
 }
@@ -759,75 +791,111 @@ function calcAutoMiners(){
 }
 
 /* ═══════════════════════════════════════════
-   SAVE / LOAD
+   SAVE / LOAD (with validation)
    ═══════════════════════════════════════════ */
 function save(){
   try{
     localStorage.setItem('hashrig_game_v3', JSON.stringify(S));
-  }catch(e){}
+  }catch(e){
+    showToast('⚠️ Save failed — storage may be full');
+  }
+}
+
+function clampNum(val, min, max){
+  if(typeof val !== 'number' || !isFinite(val)) return min;
+  return Math.max(min, Math.min(max, val));
 }
 
 function load(){
   try{
-    const d = localStorage.getItem('hashrig_game_v3');
-    if(d){
-      const parsed = JSON.parse(d);
-      // Deep merge to handle new fields
-      S = JSON.parse(JSON.stringify(DEFAULTS));
-      Object.keys(parsed).forEach(k=>{
-        if(k==='upg'){
-          Object.keys(parsed.upg).forEach(u=>{
-            if(S.upg[u]) S.upg[u].l = parsed.upg[u].l || 0;
-          });
-        } else if(k==='coinMult'){
-          // Recalculated from market
-        } else {
-          S[k] = parsed[k];
+    var d = localStorage.getItem('hashrig_game_v3');
+    if(!d) return;
+    var parsed = JSON.parse(d);
+    if(!parsed || typeof parsed !== 'object') return;
+
+    S = JSON.parse(JSON.stringify(DEFAULTS));
+
+    /* Whitelist: only copy known keys */
+    STATE_KEYS.forEach(function(k){
+      if(!(k in parsed)) return;
+      if(k === 'coin'){
+        if(['BTC','ETH','SOL'].indexOf(parsed.coin) !== -1) S.coin = parsed.coin;
+      } else if(k === 'quests'){
+        if(Array.isArray(parsed.quests)) S.quests = sanitizeQuests(parsed.quests);
+      } else if(k === 'questDate'){
+        if(typeof parsed.questDate === 'string') S.questDate = parsed.questDate.slice(0,10);
+      } else if(typeof DEFAULTS[k] === 'number'){
+        S[k] = clampNum(parsed[k], 0, 1e15);
+      }
+    });
+
+    /* Upgrade levels with validation */
+    if(parsed.upg && typeof parsed.upg === 'object'){
+      Object.keys(S.upg).forEach(function(u){
+        if(parsed.upg[u] && typeof parsed.upg[u].l === 'number'){
+          S.upg[u] = {l: clampNum(parsed.upg[u].l, 0, DEFAULTS.upg[u].max), max: DEFAULTS.upg[u].max};
         }
       });
-      calcHashRate();
-      calcDefense();
-      calcAutoMiners();
     }
-  }catch(e){}
+
+    /* Clamp resources to max */
+    S.energy = Math.min(S.energy, S.maxEnergy);
+    S.cool = Math.min(S.cool, S.maxCool);
+    S.health = Math.min(S.health, S.maxHealth);
+
+    calcHashRate();
+    calcDefense();
+    calcAutoMiners();
+  }catch(e){
+    showToast('⚠️ Save data corrupted — starting fresh');
+    S = JSON.parse(JSON.stringify(DEFAULTS));
+  }
+}
+
+function sanitizeQuests(arr){
+  if(!Array.isArray(arr)) return [];
+  return arr.slice(0,3).map(function(q){
+    return {
+      id: typeof q.id === 'string' ? q.id.slice(0,20) : '',
+      name: typeof q.name === 'string' ? q.name.slice(0,30) : '',
+      desc: typeof q.desc === 'string' ? q.desc.slice(0,50) : '',
+      target: clampNum(q.target, 1, 100000),
+      progress: clampNum(q.progress, 0, 100000),
+      reward: clampNum(q.reward, 0, 100000),
+      done: q.done === true
+    };
+  });
 }
 
 /* ═══════════════════════════════════════════
    MINING
    ═══════════════════════════════════════════ */
 function doMine(){
-  if(S.energy <= 0){showToast('⚡ No energy! Recharge to continue mining.');return;}
-  if(S.health <= 0){showToast('🔧 Rig broken! Repair to continue mining.');return;}
+  if(S.energy < 1){showToast('⚡ No energy! Recharge to continue mining.');return;}
+  if(S.health < 1){showToast('🔧 Rig broken! Repair to continue mining.');return;}
 
-  // Resource drain
   S.energy = Math.max(0, S.energy - 1);
   S.cool = Math.max(0, S.cool - 0.8);
   S.health = Math.max(0, S.health - 0.3);
 
-  // Cooling efficiency
-  const coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
-  // Algo efficiency
-  const algoEff = 1 + S.upg.algo.l * 0.15;
-
-  const variance = 0.8 + Math.random()*0.4;
-  const gain = S.hashRate * S.coinMult[S.coin] * coolEff * algoEff * variance;
+  var coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+  var algoEff = 1 + S.upg.algo.l * 0.15;
+  var variance = 0.8 + Math.random()*0.4;
+  var gain = S.hashRate * S.coinMult[S.coin] * coolEff * algoEff * variance;
 
   S.coins += gain;
   S.total += gain;
   S.best = Math.max(S.best, S.coins);
   S.clicks++;
 
-  // Block progress
   S.blockProg += S.hashRate;
   if(S.blockProg >= S.blockTarget) foundBlock();
 
-  // Quest tracking
   checkQuest('mine', gain);
   checkQuest('click', 1);
 
-  // Visual feedback
   spawnParticle('+' + fmt(gain));
-  const rig = document.getElementById('rig-card');
+  var rig = document.getElementById('rig-card');
   rig.classList.remove('mine-flash');
   void rig.offsetWidth;
   rig.classList.add('mine-flash');
@@ -840,8 +908,9 @@ function foundBlock(){
   S.blocksFound++;
   S.blockTarget = Math.floor(100 * Math.pow(1.3, S.blocksFound));
 
-  const poolBonus = 1 + S.upg.pool.l * 0.2;
-  const reward = Math.floor((50 + S.blocksFound * 20) * poolBonus * S.coinMult[S.coin]);
+  var poolBonus = 1 + S.upg.pool.l * 0.2;
+  /* Fixed: reward scales with difficulty to stay relevant */
+  var reward = Math.floor((50 + S.blocksFound * 20) * Math.pow(1.15, S.blocksFound) * poolBonus * S.coinMult[S.coin]);
 
   S.coins += reward;
   S.total += reward;
@@ -849,28 +918,36 @@ function foundBlock(){
 
   checkQuest('block', 1);
 
-  // Show modal
   document.getElementById('block-reward').textContent = '+' + fmt(reward) + ' HC';
   document.getElementById('block-num').textContent = 'Block #' + S.blocksFound;
   document.getElementById('block-modal').classList.add('show');
 }
 
-/* Auto Mining */
-let autoInterval = null;
+/* Auto Mining with delta-time validation */
+var autoInterval = null;
+var lastAutoTick = 0;
+
 function startAutoMine(){
   if(autoInterval) return;
-  autoInterval = setInterval(()=>{
-    if(S.autoMiners <= 0 || S.energy <= 0 || S.health <= 0) return;
+  lastAutoTick = Date.now();
+  autoInterval = setInterval(function(){
+    var now = Date.now();
+    var delta = now - lastAutoTick;
+    lastAutoTick = now;
 
-    // Slower resource drain for auto
+    /* Anti-tamper: skip if interval was manipulated (<500ms) */
+    if(delta < 500) return;
+
+    if(S.autoMiners <= 0 || S.energy < 1 || S.health < 1) return;
+
     S.energy = Math.max(0, S.energy - 0.3);
     S.cool = Math.max(0, S.cool - 0.2);
     S.health = Math.max(0, S.health - 0.1);
 
-    const coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
-    const algoEff = 1 + S.upg.algo.l * 0.15;
-    const variance = 0.8 + Math.random()*0.4;
-    const gain = S.hashRate * 0.5 * S.coinMult[S.coin] * coolEff * algoEff * variance;
+    var coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+    var algoEff = 1 + S.upg.algo.l * 0.15;
+    var variance = 0.8 + Math.random()*0.4;
+    var gain = S.hashRate * 0.5 * S.coinMult[S.coin] * coolEff * algoEff * variance;
 
     S.coins += gain;
     S.total += gain;
@@ -914,15 +991,17 @@ function repairRig(){
 }
 
 /* ═══════════════════════════════════════════
-   SELL
+   SELL (now gives 10% bonus)
    ═══════════════════════════════════════════ */
 function doSell(){
   if(S.coins < 10){showToast('Need at least 10 HC to sell');return;}
-  const amount = S.coins;
+  var amount = S.coins;
+  var bonus = Math.floor(amount * 0.1);
+  S.total += bonus;
   S.coins = 0;
   S.sellCount++;
   checkQuest('sell', 1);
-  showToast('💰 Sold ' + fmt(amount) + ' HC');
+  showToast('💰 Sold ' + fmt(amount) + ' HC (+' + fmt(bonus) + ' bonus)');
   updateUI();
 }
 
@@ -930,22 +1009,24 @@ function doSell(){
    COIN SELECTION
    ═══════════════════════════════════════════ */
 function selectCoin(c){
+  if(['BTC','ETH','SOL'].indexOf(c) === -1) return;
   S.coin = c;
-  document.querySelectorAll('.coin-btn').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.coin-btn').forEach(function(el){el.classList.remove('active');});
   document.getElementById('coin-'+c).classList.add('active');
   updateUI();
 }
 
 /* ═══════════════════════════════════════════
-   UPGRADES
+   UPGRADES (safe DOM rendering)
    ═══════════════════════════════════════════ */
 function buyUpgrade(id){
-  const cost = uCost(id);
+  if(!UPGRADES[id]) return;
+  var cost = uCost(id);
   if(S.coins < cost) return;
   if(S.upg[id].l >= S.upg[id].max) return;
 
   S.coins -= cost;
-  S.upg[id].l++;
+  S.upg[id] = {l: S.upg[id].l + 1, max: S.upg[id].max};
   checkQuest('upgrade', 1);
 
   calcHashRate();
@@ -960,56 +1041,81 @@ function buyUpgrade(id){
 }
 
 function renderUpgrades(){
-  const cats = {hw:'sub-hw', sw:'sub-sw', def:'sub-def'};
-  Object.keys(cats).forEach(cat=>{
-    const container = document.getElementById(cats[cat]);
-    container.innerHTML = '';
-    Object.keys(UPGRADES).filter(id=>UPGRADES[id].cat===cat).forEach(id=>{
-      const u = UPGRADES[id];
-      const lv = S.upg[id].l;
-      const mx = S.upg[id].max;
-      const cost = uCost(id);
-      const maxed = lv >= mx;
-      const canBuy = S.coins >= cost && !maxed;
+  var cats = {hw:'sub-hw', sw:'sub-sw', def:'sub-def'};
+  Object.keys(cats).forEach(function(cat){
+    var container = document.getElementById(cats[cat]);
+    container.textContent = '';
 
-      container.innerHTML += `
-        <div class="upg-card">
-          <div class="upg-icon">${u.icon}</div>
-          <div class="upg-info">
-            <div class="upg-name">${u.name}</div>
-            <div class="upg-desc">${u.desc}</div>
-            <div class="upg-lvl">Lv.${lv}/${mx}</div>
-          </div>
-          <div class="upg-buy">
-            <button class="btn btn-sm ${maxed?'':'btn-g'}" ${canBuy?'':'disabled'}
-              onclick="buyUpgrade('${id}')">
-              ${maxed ? 'MAX' : fmt(cost)+' HC'}
-            </button>
-          </div>
-        </div>`;
+    Object.keys(UPGRADES).filter(function(id){return UPGRADES[id].cat===cat;}).forEach(function(id){
+      var u = UPGRADES[id];
+      var lv = S.upg[id].l;
+      var mx = S.upg[id].max;
+      var cost = uCost(id);
+      var maxed = lv >= mx;
+      var canBuy = S.coins >= cost && !maxed;
+
+      var card = document.createElement('div');
+      card.className = 'upg-card';
+
+      var iconDiv = document.createElement('div');
+      iconDiv.className = 'upg-icon';
+      iconDiv.textContent = u.icon;
+
+      var infoDiv = document.createElement('div');
+      infoDiv.className = 'upg-info';
+
+      var nameDiv = document.createElement('div');
+      nameDiv.className = 'upg-name';
+      nameDiv.textContent = u.name;
+
+      var descDiv = document.createElement('div');
+      descDiv.className = 'upg-desc';
+      descDiv.textContent = u.desc;
+
+      var lvlDiv = document.createElement('div');
+      lvlDiv.className = 'upg-lvl';
+      lvlDiv.textContent = 'Lv.'+lv+'/'+mx;
+
+      infoDiv.appendChild(nameDiv);
+      infoDiv.appendChild(descDiv);
+      infoDiv.appendChild(lvlDiv);
+
+      var buyDiv = document.createElement('div');
+      buyDiv.className = 'upg-buy';
+
+      var btn = document.createElement('button');
+      btn.className = 'btn btn-sm ' + (maxed ? '' : 'btn-g');
+      btn.disabled = !canBuy;
+      btn.textContent = maxed ? 'MAX' : fmt(cost)+' HC';
+      btn.setAttribute('data-upg', id);
+
+      buyDiv.appendChild(btn);
+      card.appendChild(iconDiv);
+      card.appendChild(infoDiv);
+      card.appendChild(buyDiv);
+      container.appendChild(card);
     });
   });
 }
 
 /* ═══════════════════════════════════════════
-   DAILY QUESTS
+   DAILY QUESTS (safe DOM rendering)
    ═══════════════════════════════════════════ */
 function todayStr(){
   return new Date().toISOString().slice(0,10);
 }
 
 function generateQuests(){
-  const today = todayStr();
+  var today = todayStr();
   if(S.questDate === today && S.quests.length === 3) return;
 
   S.questDate = today;
   S.quests = [];
 
-  // Pick 3 unique quest types
-  const shuffled = [...QUEST_TPL].sort(()=>Math.random()-0.5);
-  for(let i=0;i<3;i++){
-    const tpl = shuffled[i];
-    const target = tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
+  var shuffled = QUEST_TPL.slice().sort(function(){return Math.random()-0.5;});
+  for(var i=0;i<3;i++){
+    var tpl = shuffled[i];
+    var target = tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
     S.quests.push({
       id: tpl.id,
       name: tpl.name,
@@ -1023,7 +1129,7 @@ function generateQuests(){
 }
 
 function checkQuest(type, amount){
-  S.quests.forEach(q=>{
+  S.quests.forEach(function(q){
     if(q.done || q.id !== type) return;
     q.progress = Math.min(q.target, q.progress + amount);
     if(q.progress >= q.target && !q.done){
@@ -1036,74 +1142,125 @@ function checkQuest(type, amount){
 }
 
 function renderQuests(){
-  const container = document.getElementById('quest-list');
-  container.innerHTML = '';
-  S.quests.forEach(q=>{
-    const pct = Math.min(100, (q.progress/q.target)*100);
-    container.innerHTML += `
-      <div class="quest-card">
-        <div class="quest-head">
-          <div class="quest-name">${q.name}</div>
-          <div class="quest-reward">${q.done?'<span class="quest-done">DONE ✓</span>':'+'+fmt(q.reward)+' HC'}</div>
-        </div>
-        <div class="quest-desc">${q.desc}</div>
-        <div class="quest-prog">
-          <div class="bar-wrap bar-b" style="height:8px;"><div class="bar-fill" style="width:${pct}%"></div></div>
-          <div class="quest-prog-text">${fmt(q.progress)}/${fmt(q.target)}</div>
-        </div>
-      </div>`;
+  var container = document.getElementById('quest-list');
+  container.textContent = '';
+
+  S.quests.forEach(function(q){
+    var pct = Math.min(100, (q.progress/q.target)*100);
+
+    var card = document.createElement('div');
+    card.className = 'quest-card';
+
+    var head = document.createElement('div');
+    head.className = 'quest-head';
+
+    var nameEl = document.createElement('div');
+    nameEl.className = 'quest-name';
+    nameEl.textContent = q.name;
+
+    var rewardEl = document.createElement('div');
+    rewardEl.className = 'quest-reward';
+    if(q.done){
+      var doneSpan = document.createElement('span');
+      doneSpan.className = 'quest-done';
+      doneSpan.textContent = 'DONE ✓';
+      rewardEl.appendChild(doneSpan);
+    } else {
+      rewardEl.textContent = '+'+fmt(q.reward)+' HC';
+    }
+
+    head.appendChild(nameEl);
+    head.appendChild(rewardEl);
+
+    var descEl = document.createElement('div');
+    descEl.className = 'quest-desc';
+    descEl.textContent = q.desc;
+
+    var progWrap = document.createElement('div');
+    progWrap.className = 'quest-prog';
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'bar-wrap bar-b';
+    barWrap.style.height = '8px';
+    var barFill = document.createElement('div');
+    barFill.className = 'bar-fill';
+    barFill.style.width = pct+'%';
+    barWrap.appendChild(barFill);
+
+    var progText = document.createElement('div');
+    progText.className = 'quest-prog-text';
+    progText.textContent = fmt(q.progress)+'/'+fmt(q.target);
+
+    progWrap.appendChild(barWrap);
+    progWrap.appendChild(progText);
+
+    card.appendChild(head);
+    card.appendChild(descEl);
+    card.appendChild(progWrap);
+    container.appendChild(card);
   });
 }
 
 function updateQuestCountdown(){
-  const now = new Date();
-  const midnight = new Date(now);
+  var now = new Date();
+  var midnight = new Date(now);
   midnight.setHours(24,0,0,0);
-  const diff = midnight - now;
-  const h = Math.floor(diff/3600000);
-  const m = Math.floor((diff%3600000)/60000);
-  const s = Math.floor((diff%60000)/1000);
+  var diff = midnight - now;
+  var h = Math.floor(diff/3600000);
+  var m = Math.floor((diff%3600000)/60000);
+  var s = Math.floor((diff%60000)/1000);
   document.getElementById('quest-countdown').textContent =
     String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
 
 /* ═══════════════════════════════════════════
-   PVP
+   PVP (safe DOM rendering)
    ═══════════════════════════════════════════ */
 function attack(idx){
-  const now = Date.now();
+  if(idx < 0 || idx >= ENEMIES.length) return;
+  var now = Date.now();
   if(now - S.lastAttack < 60000){
-    const rem = Math.ceil((60000 - (now - S.lastAttack))/1000);
+    var rem = Math.ceil((60000 - (now - S.lastAttack))/1000);
     showToast('⏳ Cooldown: '+rem+'s');
     return;
   }
 
-  const enemy = ENEMIES[idx];
-  let winChance = S.hashRate / (S.hashRate + enemy.def);
+  var enemy = ENEMIES[idx];
+  var winChance = S.hashRate / (S.hashRate + enemy.def);
   winChance = Math.max(0.2, Math.min(0.8, winChance));
 
   S.lastAttack = now;
-  const resultEl = document.getElementById('pvp-result');
-  resultEl.classList.remove('win','lose');
+  var resultEl = document.getElementById('pvp-result');
+  resultEl.className = 'pvp-result';
 
   if(Math.random() < winChance){
-    // WIN
-    const stolen = Math.floor(enemy.coins * 0.1);
+    var stolen = Math.floor(enemy.coins * 0.1);
     S.coins += stolen;
     S.total += stolen;
     S.pvpWins++;
     checkQuest('pvpwin', 1);
     resultEl.className = 'pvp-result show win';
-    resultEl.innerHTML = '⚔️ <b>VICTORY!</b><br>Stole ' + fmt(stolen) + ' HC from ' + enemy.name;
+    resultEl.textContent = '';
+    var winText = document.createElement('div');
+    winText.innerHTML = '⚔️ <b>VICTORY!</b>';
+    var winDetail = document.createElement('div');
+    winDetail.textContent = 'Stole ' + fmt(stolen) + ' HC from ' + enemy.name;
+    resultEl.appendChild(winText);
+    resultEl.appendChild(winDetail);
   } else {
-    // LOSE
-    const vaultProt = S.upg.vault.l * 0.2;
-    const vulnerable = S.coins * (1 - vaultProt);
-    const lost = Math.floor(vulnerable * 0.05);
+    var vaultProt = S.upg.vault.l * 0.2;
+    var vulnerable = S.coins * (1 - vaultProt);
+    var lost = Math.floor(vulnerable * 0.05);
     S.coins = Math.max(0, S.coins - lost);
     S.pvpLosses++;
     resultEl.className = 'pvp-result show lose';
-    resultEl.innerHTML = '💀 <b>DEFEATED!</b><br>Lost ' + fmt(lost) + ' HC to ' + enemy.name;
+    resultEl.textContent = '';
+    var loseText = document.createElement('div');
+    loseText.innerHTML = '💀 <b>DEFEATED!</b>';
+    var loseDetail = document.createElement('div');
+    loseDetail.textContent = 'Lost ' + fmt(lost) + ' HC to ' + enemy.name;
+    resultEl.appendChild(loseText);
+    resultEl.appendChild(loseDetail);
   }
 
   updateUI();
@@ -1111,31 +1268,51 @@ function attack(idx){
 }
 
 function renderEnemies(){
-  const container = document.getElementById('enemy-list');
-  container.innerHTML = '';
-  const cdActive = Date.now() - S.lastAttack < 60000;
+  var container = document.getElementById('enemy-list');
+  container.textContent = '';
+  var cdActive = Date.now() - S.lastAttack < 60000;
 
-  ENEMIES.forEach((e,i)=>{
-    let winPct = S.hashRate / (S.hashRate + e.def);
+  ENEMIES.forEach(function(e,i){
+    var winPct = S.hashRate / (S.hashRate + e.def);
     winPct = Math.max(0.2, Math.min(0.8, winPct));
-    const pctNum = Math.round(winPct*100);
-    const color = pctNum >= 60 ? 'var(--g)' : pctNum >= 40 ? 'var(--y)' : 'var(--r)';
+    var pctNum = Math.round(winPct*100);
+    var color = pctNum >= 60 ? 'var(--g)' : pctNum >= 40 ? 'var(--y)' : 'var(--r)';
 
-    container.innerHTML += `
-      <div class="enemy-card" onclick="attack(${i})" ${cdActive?'style="opacity:.5;pointer-events:none"':''}>
-        <div class="enemy-icon">${e.icon}</div>
-        <div class="enemy-info">
-          <div class="enemy-name">${e.name}</div>
-          <div class="enemy-stats">${e.hr} H/s · ${e.def} DEF · ${fmt(e.coins)} HC</div>
-        </div>
-        <div class="enemy-win" style="color:${color}">${pctNum}%</div>
-      </div>`;
+    var card = document.createElement('div');
+    card.className = 'enemy-card';
+    card.setAttribute('data-enemy', String(i));
+    if(cdActive){card.style.opacity='0.5';card.style.pointerEvents='none';}
+
+    var iconDiv = document.createElement('div');
+    iconDiv.className = 'enemy-icon';
+    iconDiv.textContent = e.icon;
+
+    var infoDiv = document.createElement('div');
+    infoDiv.className = 'enemy-info';
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'enemy-name';
+    nameDiv.textContent = e.name;
+    var statsDiv = document.createElement('div');
+    statsDiv.className = 'enemy-stats';
+    statsDiv.textContent = e.hr+' H/s · '+e.def+' DEF · '+fmt(e.coins)+' HC';
+    infoDiv.appendChild(nameDiv);
+    infoDiv.appendChild(statsDiv);
+
+    var winDiv = document.createElement('div');
+    winDiv.className = 'enemy-win';
+    winDiv.style.color = color;
+    winDiv.textContent = pctNum+'%';
+
+    card.appendChild(iconDiv);
+    card.appendChild(infoDiv);
+    card.appendChild(winDiv);
+    container.appendChild(card);
   });
 }
 
 function updatePvpCooldown(){
-  const el = document.getElementById('pvp-cooldown');
-  const rem = 60000 - (Date.now() - S.lastAttack);
+  var el = document.getElementById('pvp-cooldown');
+  var rem = 60000 - (Date.now() - S.lastAttack);
   if(rem > 0){
     el.textContent = '⏳ Cooldown: ' + Math.ceil(rem/1000) + 's';
     el.style.display = 'block';
@@ -1145,97 +1322,130 @@ function updatePvpCooldown(){
 }
 
 /* ═══════════════════════════════════════════
-   WALLET
+   WALLET (closure-scoped, never on window)
    ═══════════════════════════════════════════ */
 async function initWallet(){
   try{
-    const stored = localStorage.getItem('hashrig_wallet_v3');
+    if(typeof ethers === 'undefined') return;
+    var stored = localStorage.getItem('hashrig_wallet_v3');
     if(stored){
-      const data = JSON.parse(stored);
-      window._wlt = ethers.Wallet.fromPhrase(data.mnemonic);
+      var data = JSON.parse(stored);
+      if(data && typeof data.mnemonic === 'string'){
+        _wallet = ethers.Wallet.fromPhrase(data.mnemonic);
+      }
     } else {
-      const wallet = ethers.Wallet.createRandom();
-      window._wlt = wallet;
+      var w = ethers.Wallet.createRandom();
+      _wallet = w;
       localStorage.setItem('hashrig_wallet_v3', JSON.stringify({
-        mnemonic: wallet.mnemonic.phrase
+        mnemonic: w.mnemonic.phrase
       }));
     }
   }catch(e){
-    console.warn('Wallet init failed:', e);
-    window._wlt = null;
+    _wallet = null;
   }
 }
 
 function openWallet(){
-  const modal = document.getElementById('wallet-modal');
+  _seedRevealed = false;
+  _pkRevealed = false;
+
+  var modal = document.getElementById('wallet-modal');
   modal.classList.add('show');
 
-  // Reset reveals
-  document.getElementById('seed-grid').classList.add('hidden-text');
-  document.getElementById('seed-grid').classList.remove('revealed');
-  document.getElementById('pk-display').classList.add('hidden-text');
-  document.getElementById('pk-display').classList.remove('revealed');
+  /* Seed grid: show placeholders, not actual words */
+  var grid = document.getElementById('seed-grid');
+  grid.textContent = '';
+  for(var i=0;i<12;i++){
+    var wordDiv = document.createElement('div');
+    wordDiv.className = 'seed-word';
+    var numSpan = document.createElement('span');
+    numSpan.className = 'sw-num';
+    numSpan.textContent = String(i+1);
+    wordDiv.appendChild(numSpan);
+    wordDiv.appendChild(document.createTextNode('●●●●●'));
+    grid.appendChild(wordDiv);
+  }
 
-  if(!window._wlt) {
+  /* Private key: show placeholder */
+  document.getElementById('pk-display').textContent = '●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●';
+
+  /* Update reveal buttons */
+  document.getElementById('btn-reveal-seed').textContent = '👁 Tap to Reveal';
+  document.getElementById('btn-reveal-pk').textContent = '👁 Tap to Reveal';
+
+  if(!_wallet){
     document.getElementById('w-addr').textContent = 'Wallet unavailable';
     return;
   }
 
-  const addr = window._wlt.address;
-  document.getElementById('w-addr').textContent = addr;
-
-  // Seed grid
-  const words = window._wlt.mnemonic.phrase.split(' ');
-  const grid = document.getElementById('seed-grid');
-  grid.innerHTML = '';
-  words.forEach((w,i)=>{
-    grid.innerHTML += `<div class="seed-word"><span class="sw-num">${i+1}</span>${w}</div>`;
-  });
-
-  // Private key
-  document.getElementById('pk-display').textContent = window._wlt.privateKey;
-
+  document.getElementById('w-addr').textContent = _wallet.address;
   switchWalletTab('overview');
 }
 
 function closeWallet(){
   document.getElementById('wallet-modal').classList.remove('show');
-  // Reset reveals on close
-  document.getElementById('seed-grid').classList.add('hidden-text');
-  document.getElementById('seed-grid').classList.remove('revealed');
-  document.getElementById('pk-display').classList.add('hidden-text');
-  document.getElementById('pk-display').classList.remove('revealed');
+
+  /* Clear sensitive data from DOM on close */
+  _seedRevealed = false;
+  _pkRevealed = false;
+  var grid = document.getElementById('seed-grid');
+  grid.textContent = '';
+  document.getElementById('pk-display').textContent = '●●●●●●●●●●●●●●●●';
 }
 
 function switchWalletTab(tab){
-  document.querySelectorAll('#wallet-modal .modal-tab').forEach((el,i)=>{
-    el.classList.toggle('active', ['overview','seed','pkey'][i]===tab);
+  var tabs = ['overview','seed','pkey'];
+  document.querySelectorAll('#wallet-modal .modal-tab').forEach(function(el,i){
+    el.classList.toggle('active', tabs[i]===tab);
   });
-  document.querySelectorAll('#wallet-modal .modal-pane').forEach((el,i)=>{
-    el.classList.toggle('active', ['overview','seed','pkey'][i]===tab);
+  document.querySelectorAll('#wallet-modal .modal-pane').forEach(function(el,i){
+    el.classList.toggle('active', tabs[i]===tab);
   });
 }
 
-function toggleReveal(type){
-  if(type==='seed'){
-    const el = document.getElementById('seed-grid');
-    el.classList.toggle('hidden-text');
-    el.classList.toggle('revealed');
-  } else {
-    const el = document.getElementById('pk-display');
-    el.classList.toggle('hidden-text');
-    el.classList.toggle('revealed');
+function toggleRevealSeed(){
+  if(!_wallet) return;
+  _seedRevealed = !_seedRevealed;
+  var grid = document.getElementById('seed-grid');
+  grid.textContent = '';
+  var words = _wallet.mnemonic.phrase.split(' ');
+
+  for(var i=0;i<12;i++){
+    var wordDiv = document.createElement('div');
+    wordDiv.className = 'seed-word';
+    var numSpan = document.createElement('span');
+    numSpan.className = 'sw-num';
+    numSpan.textContent = String(i+1);
+    wordDiv.appendChild(numSpan);
+    wordDiv.appendChild(document.createTextNode(_seedRevealed ? words[i] : '●●●●●'));
+    grid.appendChild(wordDiv);
   }
+
+  document.getElementById('btn-reveal-seed').textContent = _seedRevealed ? '🔒 Hide' : '👁 Tap to Reveal';
+}
+
+function toggleRevealPK(){
+  if(!_wallet) return;
+  _pkRevealed = !_pkRevealed;
+  document.getElementById('pk-display').textContent = _pkRevealed ? _wallet.privateKey : '●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●';
+  document.getElementById('btn-reveal-pk').textContent = _pkRevealed ? '🔒 Hide' : '👁 Tap to Reveal';
 }
 
 function copySeed(){
-  if(!window._wlt) return;
-  navigator.clipboard.writeText(window._wlt.mnemonic.phrase).then(()=>showToast('📋 Seed copied'));
+  if(!_wallet) return;
+  navigator.clipboard.writeText(_wallet.mnemonic.phrase).then(function(){
+    showToast('📋 Seed copied (auto-clears in 30s)');
+    /* Auto-clear clipboard after 30 seconds */
+    setTimeout(function(){navigator.clipboard.writeText('').catch(function(){});}, 30000);
+  });
 }
 
 function copyPK(){
-  if(!window._wlt) return;
-  navigator.clipboard.writeText(window._wlt.privateKey).then(()=>showToast('📋 Key copied'));
+  if(!_wallet) return;
+  navigator.clipboard.writeText(_wallet.privateKey).then(function(){
+    showToast('📋 Key copied (auto-clears in 30s)');
+    setTimeout(function(){navigator.clipboard.writeText('').catch(function(){});}, 30000);
+  });
 }
 
 function closeBlockModal(){
@@ -1246,14 +1456,16 @@ function closeBlockModal(){
    TAB SWITCHING
    ═══════════════════════════════════════════ */
 function switchTab(tab){
-  const tabs = ['mine','rig','quests','pvp'];
-  tabs.forEach(t=>{
+  var tabs = ['mine','rig','quests','pvp'];
+  if(tabs.indexOf(tab) === -1) return;
+
+  tabs.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
-  document.querySelectorAll('.tab-btn').forEach((el,i)=>{
+  document.querySelectorAll('.tab-btn').forEach(function(el,i){
     el.classList.toggle('active', tabs[i]===tab);
   });
-  document.querySelectorAll('.bnav-btn').forEach((el,i)=>{
+  document.querySelectorAll('.bnav-btn').forEach(function(el,i){
     el.classList.toggle('active', tabs[i]===tab);
   });
 
@@ -1263,10 +1475,11 @@ function switchTab(tab){
 }
 
 function switchSub(sub){
-  ['hw','sw','def'].forEach(s=>{
+  if(['hw','sw','def'].indexOf(sub) === -1) return;
+  ['hw','sw','def'].forEach(function(s){
     document.getElementById('sub-'+s).style.display = s===sub ? 'block' : 'none';
   });
-  document.querySelectorAll('.sub-tab').forEach((el,i)=>{
+  document.querySelectorAll('.sub-tab').forEach(function(el,i){
     el.classList.toggle('active', ['hw','sw','def'][i]===sub);
   });
 }
@@ -1275,12 +1488,10 @@ function switchSub(sub){
    UI UPDATE
    ═══════════════════════════════════════════ */
 function updateUI(){
-  // Stats
   document.getElementById('stat-coins').textContent = fmt(S.coins);
   document.getElementById('stat-total').textContent = fmt(S.total);
   document.getElementById('stat-hr').textContent = fmt(S.hashRate);
 
-  // Resources
   document.getElementById('res-energy-text').textContent = Math.floor(S.energy)+'/'+S.maxEnergy;
   document.getElementById('res-energy-bar').style.width = (S.energy/S.maxEnergy*100)+'%';
   document.getElementById('res-cool-text').textContent = Math.floor(S.cool)+'/'+S.maxCool;
@@ -1288,65 +1499,114 @@ function updateUI(){
   document.getElementById('res-health-text').textContent = Math.floor(S.health)+'/'+S.maxHealth;
   document.getElementById('res-health-bar').style.width = (S.health/S.maxHealth*100)+'%';
 
-  // Block progress
-  const blockPct = Math.min(100, S.blockProg/S.blockTarget*100);
+  var blockPct = Math.min(100, S.blockProg/S.blockTarget*100);
   document.getElementById('block-fill').style.width = blockPct+'%';
   document.getElementById('block-text').textContent = fmt(S.blockProg)+' / '+fmt(S.blockTarget);
 
-  // Coin multipliers in selector
   document.querySelector('#coin-BTC .c-mult').textContent = 'x'+S.coinMult.BTC.toFixed(2);
   document.querySelector('#coin-ETH .c-mult').textContent = 'x'+S.coinMult.ETH.toFixed(2);
   document.querySelector('#coin-SOL .c-mult').textContent = 'x'+S.coinMult.SOL.toFixed(2);
 
-  // Resource bar colors
-  const ebar = document.getElementById('res-energy-bar');
-  ebar.style.background = S.energy < 20 ? 'var(--r)' : 'var(--g)';
-  const cbar = document.getElementById('res-cool-bar');
-  cbar.style.background = S.cool < 20 ? 'var(--r)' : 'var(--b)';
-  const hbar = document.getElementById('res-health-bar');
-  hbar.style.background = S.health < 20 ? 'var(--r)' : 'var(--o)';
+  document.getElementById('res-energy-bar').style.background = S.energy < 20 ? 'var(--r)' : 'var(--g)';
+  document.getElementById('res-cool-bar').style.background = S.cool < 20 ? 'var(--r)' : 'var(--b)';
+  document.getElementById('res-health-bar').style.background = S.health < 20 ? 'var(--r)' : 'var(--o)';
 }
 
 /* ═══════════════════════════════════════════
    PARTICLES + TOAST
    ═══════════════════════════════════════════ */
 function spawnParticle(text){
-  const el = document.createElement('div');
+  var el = document.createElement('div');
   el.className = 'particle';
   el.textContent = text;
-  const rig = document.getElementById('rig-card');
-  const rect = rig.getBoundingClientRect();
+  var rig = document.getElementById('rig-card');
+  var rect = rig.getBoundingClientRect();
   el.style.left = (rect.left + rect.width/2 - 20) + 'px';
   el.style.top = (rect.top - 10) + 'px';
   document.body.appendChild(el);
-  setTimeout(()=>el.remove(), 900);
+  setTimeout(function(){el.remove();}, 900);
 }
 
-let toastTimeout = null;
+var toastTimeout = null;
 function showToast(msg){
-  let toast = document.getElementById('toast');
+  var toast = document.getElementById('toast');
   if(!toast){
     toast = document.createElement('div');
     toast.id = 'toast';
-    toast.style.cssText = `
-      position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:500;
-      background:var(--s1);border:1px solid var(--g);border-radius:8px;
-      padding:10px 20px;font-size:13px;color:var(--g);
-      font-family:'Share Tech Mono',monospace;box-shadow:var(--gg);
-      transition:opacity .3s;pointer-events:none;
-    `;
+    toast.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:500;background:var(--s1);border:1px solid var(--g);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--g);font-family:"Share Tech Mono",monospace;box-shadow:var(--gg);transition:opacity .3s;pointer-events:none;';
     document.body.appendChild(toast);
   }
   toast.textContent = msg;
   toast.style.opacity = '1';
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(()=>{toast.style.opacity='0';},2000);
+  toastTimeout = setTimeout(function(){toast.style.opacity='0';},2000);
 }
 
 /* ═══════════════════════════════════════════
-   KEYBOARD
+   EVENT LISTENERS (no inline onclick)
    ═══════════════════════════════════════════ */
-document.addEventListener('keydown', e=>{
+document.getElementById('btn-wallet').addEventListener('click', openWallet);
+document.getElementById('rig-card').addEventListener('click', doMine);
+document.getElementById('sell-card').addEventListener('click', doSell);
+document.getElementById('btn-energy').addEventListener('click', refillEnergy);
+document.getElementById('btn-cool').addEventListener('click', refillCooling);
+document.getElementById('btn-repair').addEventListener('click', repairRig);
+document.getElementById('btn-collect-block').addEventListener('click', closeBlockModal);
+document.getElementById('btn-reveal-seed').addEventListener('click', toggleRevealSeed);
+document.getElementById('btn-copy-seed').addEventListener('click', copySeed);
+document.getElementById('btn-reveal-pk').addEventListener('click', toggleRevealPK);
+document.getElementById('btn-copy-pk').addEventListener('click', copyPK);
+
+/* Tab navigation via event delegation */
+document.getElementById('tab-nav').addEventListener('click', function(e){
+  var btn = e.target.closest('.tab-btn');
+  if(btn && btn.dataset.tab) switchTab(btn.dataset.tab);
+});
+document.getElementById('bottom-nav').addEventListener('click', function(e){
+  var btn = e.target.closest('.bnav-btn');
+  if(btn && btn.dataset.tab) switchTab(btn.dataset.tab);
+});
+
+/* Sub-tabs delegation */
+document.getElementById('sub-tabs').addEventListener('click', function(e){
+  var btn = e.target.closest('.sub-tab');
+  if(btn && btn.dataset.sub) switchSub(btn.dataset.sub);
+});
+
+/* Wallet tabs delegation */
+document.getElementById('wallet-tabs').addEventListener('click', function(e){
+  var btn = e.target.closest('.modal-tab');
+  if(btn && btn.dataset.wtab) switchWalletTab(btn.dataset.wtab);
+});
+
+/* Coin selector delegation */
+document.querySelector('.coin-sel').addEventListener('click', function(e){
+  var btn = e.target.closest('.coin-btn');
+  if(btn && btn.dataset.coin) selectCoin(btn.dataset.coin);
+});
+
+/* Upgrade buy delegation */
+document.getElementById('tab-rig').addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-upg]');
+  if(btn) buyUpgrade(btn.dataset.upg);
+});
+
+/* Enemy attack delegation */
+document.getElementById('enemy-list').addEventListener('click', function(e){
+  var card = e.target.closest('.enemy-card');
+  if(card && card.dataset.enemy) attack(parseInt(card.dataset.enemy, 10));
+});
+
+/* Modal overlay close */
+document.getElementById('wallet-modal').addEventListener('click', function(e){
+  if(e.target === this) closeWallet();
+});
+document.getElementById('block-modal').addEventListener('click', function(e){
+  if(e.target === this) closeBlockModal();
+});
+
+/* Keyboard: SPACE to mine */
+document.addEventListener('keydown', function(e){
   if(e.code === 'Space' && !e.repeat){
     e.preventDefault();
     doMine();
@@ -1371,21 +1631,16 @@ async function init(){
 
   if(S.autoMiners > 0) startAutoMine();
 
-  // Auto-save every 8 seconds
   setInterval(save, 8000);
-
-  // Market ticker every 4 seconds
   setInterval(tickMarket, 4000);
-
-  // Quest countdown every second
   setInterval(updateQuestCountdown, 1000);
   updateQuestCountdown();
-
-  // PvP cooldown check every second
-  setInterval(()=>{updatePvpCooldown();}, 1000);
+  setInterval(updatePvpCooldown, 1000);
 }
 
 init();
+
+})(); /* END IIFE */
 </script>
 </body>
 </html>
