@@ -563,6 +563,149 @@ body::after{
 }
 .battle-rig-fade{animation:rig-fade .5s ease forwards;}
 @keyframes rig-fade{0%{opacity:1;transform:scale(1);}100%{opacity:.2;transform:scale(.8);}}
+
+/* ═══════════════════════════════════════════
+   FULL-SCREEN RIG PAGE
+   ═══════════════════════════════════════════ */
+.rig-page{
+  position:fixed;inset:0;z-index:150;
+  background:#020806;
+  display:none;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
+}
+.rig-page.show{display:flex;}
+
+.matrix-canvas{
+  position:absolute;inset:0;z-index:0;
+  pointer-events:none;opacity:0.4;
+}
+
+/* Header */
+.rig-page-header{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;
+  background:rgba(2,8,6,.85);backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(0,255,136,.15);
+}
+.rig-back-btn{
+  background:transparent;border:1px solid var(--g);border-radius:6px;
+  padding:8px 14px;color:var(--g);
+  font-family:'Orbitron',sans-serif;font-size:12px;cursor:pointer;
+  transition:all .15s;
+}
+.rig-back-btn:active{transform:scale(.95);background:rgba(0,255,136,.1);}
+.rig-page-title{
+  font-size:18px;color:var(--g);
+  text-shadow:0 0 20px rgba(0,255,136,.5);letter-spacing:3px;
+}
+.rig-page-spacer{width:70px;}
+
+/* Stats bar */
+.rig-page-stats{
+  position:relative;z-index:1;
+  display:flex;gap:6px;padding:10px 16px;
+  background:rgba(2,8,6,.7);
+}
+.rig-stat-item{
+  flex:1;text-align:center;
+  background:rgba(0,255,136,.04);
+  border:1px solid rgba(0,255,136,.12);border-radius:8px;
+  padding:8px 4px;
+}
+.rig-stat-val{
+  font-size:16px;color:var(--g);display:block;
+  text-shadow:0 0 10px rgba(0,255,136,.4);
+}
+.rig-stat-label{font-size:9px;color:var(--muted);display:block;margin-top:2px;}
+
+/* Large 4x4 grid */
+.rig-page-grid{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:10px;padding:16px;flex:1;align-content:start;
+}
+
+/* Glass-morphism grid cells */
+.rig-page-grid .grid-cell{
+  aspect-ratio:1;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(10,21,32,.6);backdrop-filter:blur(10px);
+  border:1px solid rgba(0,255,136,.1);
+  transition:all .2s;cursor:pointer;position:relative;overflow:hidden;
+}
+.rig-page-grid .grid-cell-filled{
+  border-color:rgba(0,255,136,.35);
+  background:rgba(0,255,136,.06);
+  box-shadow:inset 0 0 20px rgba(0,255,136,.05),0 0 12px rgba(0,255,136,.1);
+}
+.rig-page-grid .grid-cell-filled.active-mining{
+  animation:rig-page-pulse 2s infinite;
+}
+.rig-page-grid .grid-cell-filled.active-mining::before{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,transparent 49%,rgba(0,255,136,.04) 50%,transparent 51%),
+    linear-gradient(0deg,transparent 49%,rgba(0,255,136,.04) 50%,transparent 51%);
+  background-size:20px 20px;
+  animation:circuit-scroll 4s linear infinite;
+  pointer-events:none;
+}
+@keyframes circuit-scroll{from{background-position:0 0;}to{background-position:20px 20px;}}
+@keyframes rig-page-pulse{
+  0%,100%{box-shadow:inset 0 0 20px rgba(0,255,136,.05),0 0 8px rgba(0,255,136,.1);}
+  50%{box-shadow:inset 0 0 30px rgba(0,255,136,.12),0 0 20px rgba(0,255,136,.25);}
+}
+.rig-page-grid .grid-cell-icon{
+  font-size:30px;margin-bottom:4px;
+  filter:drop-shadow(0 0 6px rgba(0,255,136,.4));
+}
+.rig-page-grid .grid-cell-label{
+  font-size:10px;color:var(--g);
+  text-shadow:0 0 8px rgba(0,255,136,.3);
+}
+.rig-page-grid .grid-cell-empty{
+  border:1px dashed rgba(0,255,136,.2);
+  color:rgba(0,255,136,.3);font-size:28px;
+}
+.rig-page-grid .grid-cell-empty:active{
+  border-color:var(--g);color:var(--g);
+  background:rgba(0,255,136,.08);
+}
+.rig-page-grid .grid-cell-locked{
+  border:1px solid rgba(26,58,80,.3);opacity:.5;overflow:hidden;
+}
+.rig-page-grid .grid-cell-locked::after{
+  content:'';position:absolute;inset:-50%;
+  background:linear-gradient(45deg,transparent 40%,rgba(0,255,136,.06) 45%,rgba(0,200,255,.06) 50%,rgba(0,255,136,.06) 55%,transparent 60%);
+  animation:holo-shimmer 3s linear infinite;pointer-events:none;
+}
+@keyframes holo-shimmer{
+  from{transform:translateX(-30%) translateY(-30%);}
+  to{transform:translateX(30%) translateY(30%);}
+}
+
+/* Software toolbar */
+.rig-page-sw-label{
+  position:relative;z-index:1;
+  font-family:'Orbitron',sans-serif;font-size:10px;
+  color:var(--muted);text-align:center;letter-spacing:2px;
+  padding:0 16px 6px;
+}
+.rig-page-sw{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:6px;padding:0 16px 20px;
+}
+.rig-page-sw .grid-sw-btn{
+  background:rgba(10,21,32,.6);backdrop-filter:blur(10px);
+  border:1px solid rgba(0,200,255,.15);border-radius:10px;
+  padding:10px 6px;
+}
+.rig-page-sw .grid-sw-btn:active{
+  background:rgba(0,200,255,.1);
+  box-shadow:0 0 15px rgba(0,200,255,.2);
+}
 </style>
 </head>
 <body>
@@ -825,6 +968,37 @@ body::after{
     <div class="battle-result-text" id="battle-result"></div>
     <div class="battle-result-detail" id="battle-detail"></div>
   </div>
+</div>
+
+<!-- ═══ FULL-SCREEN RIG PAGE ═══ -->
+<div class="rig-page" id="rig-page">
+  <canvas id="matrix-canvas" class="matrix-canvas"></canvas>
+  <div class="rig-page-header">
+    <button class="rig-back-btn" id="rig-back-btn">← BACK</button>
+    <div class="rig-page-title font-title">RIG SETUP</div>
+    <div class="rig-page-spacer"></div>
+  </div>
+  <div class="rig-page-stats">
+    <div class="rig-stat-item">
+      <span class="rig-stat-val font-title" id="rig-stat-hr">0</span>
+      <span class="rig-stat-label">H/s</span>
+    </div>
+    <div class="rig-stat-item">
+      <span class="rig-stat-val font-title" id="rig-stat-def">0</span>
+      <span class="rig-stat-label">DEFENSE</span>
+    </div>
+    <div class="rig-stat-item">
+      <span class="rig-stat-val font-title" id="rig-stat-auto">0</span>
+      <span class="rig-stat-label">AUTO</span>
+    </div>
+    <div class="rig-stat-item">
+      <span class="rig-stat-val font-title" id="rig-stat-coins">0</span>
+      <span class="rig-stat-label">HC</span>
+    </div>
+  </div>
+  <div class="rig-page-grid" id="rig-page-grid"></div>
+  <div class="rig-page-sw-label">SOFTWARE & DEFENSE</div>
+  <div class="rig-page-sw" id="rig-page-sw"></div>
 </div>
 
 <!-- Firebase SDK (compat mode for single-file usage) -->
@@ -1163,6 +1337,7 @@ function unlockGridSlot(idx){
   S.gridUnlocked++;
   showToast('🔓 Grid slot unlocked!');
   renderGrid();updateUI();
+  if(rigPageOpen){renderRigPageGrid();updateRigPageStats();}
 }
 
 function openBuyPanel(){
@@ -1649,6 +1824,7 @@ function buyUpgrade(id){
   showToast('⬆️ ' + UPGRADES[id].name + ' → Lv.' + S.upg[id].l);
   updateUI();
   renderGrid();
+  if(rigPageOpen){renderRigPageGrid();updateRigPageStats();}
   closeBuyPanel();
 }
 
@@ -2104,6 +2280,12 @@ function switchTab(tab){
   var tabs = ['mine','rig','quests','pvp'];
   if(tabs.indexOf(tab) === -1) return;
 
+  /* RIG opens full-screen page */
+  if(tab==='rig'){showRigPage();return;}
+
+  /* Close rig page if switching away */
+  if(rigPageOpen) hideRigPage();
+
   tabs.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
@@ -2114,7 +2296,6 @@ function switchTab(tab){
     el.classList.toggle('active', tabs[i]===tab);
   });
 
-  if(tab==='rig') renderGrid();
   if(tab==='quests') renderQuests();
   if(tab==='pvp') renderEnemies();
 }
@@ -2171,6 +2352,8 @@ function updateUI(){
   }else{
     rigLabel.textContent='TAP TO MINE';rigLabel.style.color='var(--g)';
   }
+
+  if(rigPageOpen) updateRigPageStats();
 }
 
 /* ═══════════════════════════════════════════
@@ -2201,6 +2384,143 @@ function showToast(msg){
   toast.style.opacity = '1';
   clearTimeout(toastTimeout);
   toastTimeout = setTimeout(function(){toast.style.opacity='0';},2000);
+}
+
+/* ═══════════════════════════════════════════
+   MATRIX RAIN ANIMATION
+   ═══════════════════════════════════════════ */
+var matrixAnimId=null;
+
+function initMatrixRain(){
+  var canvas=document.getElementById('matrix-canvas');
+  if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF#$%&@'.split('');
+  var fontSize=14;
+  var columns,drops;
+
+  function resize(){
+    canvas.width=canvas.parentElement.clientWidth;
+    canvas.height=canvas.parentElement.clientHeight;
+    columns=Math.floor(canvas.width/fontSize);
+    drops=[];
+    for(var i=0;i<columns;i++) drops[i]=Math.random()*-100;
+  }
+
+  function draw(){
+    ctx.fillStyle='rgba(2,8,6,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.font=fontSize+'px monospace';
+
+    for(var i=0;i<columns;i++){
+      var ch=chars[Math.floor(Math.random()*chars.length)];
+      var x=i*fontSize;
+      var y=drops[i]*fontSize;
+      ctx.fillStyle='rgba(0,255,136,'+(0.5+Math.random()*0.5)+')';
+      ctx.fillText(ch,x,y);
+      if(y>canvas.height&&Math.random()>0.975) drops[i]=0;
+      drops[i]++;
+    }
+    matrixAnimId=requestAnimationFrame(draw);
+  }
+
+  resize();
+  window.addEventListener('resize',resize);
+  draw();
+}
+
+function stopMatrixRain(){
+  if(matrixAnimId){cancelAnimationFrame(matrixAnimId);matrixAnimId=null;}
+}
+
+/* ═══════════════════════════════════════════
+   RIG PAGE SHOW / HIDE
+   ═══════════════════════════════════════════ */
+var rigPageOpen=false;
+
+function showRigPage(){
+  document.getElementById('rig-page').classList.add('show');
+  rigPageOpen=true;
+  renderRigPageGrid();
+  updateRigPageStats();
+  initMatrixRain();
+  document.getElementById('bottom-nav').style.display='none';
+}
+
+function hideRigPage(){
+  document.getElementById('rig-page').classList.remove('show');
+  rigPageOpen=false;
+  stopMatrixRain();
+  document.getElementById('bottom-nav').style.display='';
+  renderGrid();
+}
+
+function updateRigPageStats(){
+  var el;
+  el=document.getElementById('rig-stat-hr');if(el)el.textContent=fmt(S.hashRate);
+  el=document.getElementById('rig-stat-def');if(el)el.textContent=fmt(S.defenseRating);
+  el=document.getElementById('rig-stat-auto');if(el)el.textContent=String(S.autoMiners);
+  el=document.getElementById('rig-stat-coins');if(el)el.textContent=fmt(S.coins);
+}
+
+/* ═══════════════════════════════════════════
+   RIG PAGE GRID RENDERING
+   ═══════════════════════════════════════════ */
+function renderRigPageGrid(){
+  var container=document.getElementById('rig-page-grid');
+  if(!container)return;
+  container.textContent='';
+
+  var hwItems=[];
+  HW_TYPES.forEach(function(hw){
+    for(var i=0;i<S.upg[hw.id].l;i++) hwItems.push({icon:hw.icon,name:hw.name});
+  });
+
+  for(var i=0;i<16;i++){
+    var cell=document.createElement('div');
+    if(i<hwItems.length){
+      cell.className='grid-cell grid-cell-filled'+(S.autoMiners>0&&!S.overheated?' active-mining':'');
+      var ic=document.createElement('div');ic.className='grid-cell-icon';ic.textContent=hwItems[i].icon;
+      var lb=document.createElement('div');lb.className='grid-cell-label';lb.textContent=hwItems[i].name;
+      cell.appendChild(ic);cell.appendChild(lb);
+    }else if(i<S.gridUnlocked){
+      cell.className='grid-cell grid-cell-empty';
+      cell.textContent='+';
+      cell.setAttribute('data-grid-action','buy');
+    }else{
+      cell.className='grid-cell grid-cell-locked';
+      var lk=document.createElement('div');lk.style.fontSize='18px';lk.textContent='🔒';
+      var lc=document.createElement('div');lc.style.cssText='font-size:9px;color:var(--muted);margin-top:2px;';
+      lc.textContent=fmt(getUnlockCost(i))+' HC';
+      cell.appendChild(lk);cell.appendChild(lc);
+      cell.setAttribute('data-grid-action','unlock');
+      cell.setAttribute('data-grid-idx',String(i));
+    }
+    container.appendChild(cell);
+  }
+  renderRigPageSwPanel();
+}
+
+function renderRigPageSwPanel(){
+  var c=document.getElementById('rig-page-sw');
+  if(!c)return;
+  c.textContent='';
+  var items=[
+    {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
+    {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
+  ];
+  items.forEach(function(item){
+    var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
+    var btn=document.createElement('div');btn.className='grid-sw-btn';
+    btn.setAttribute('data-sw-upg',item.id);
+    var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
+    var nm=document.createElement('span');nm.textContent=item.name;
+    var lbl=document.createElement('span');lbl.className='sw-lvl';
+    lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
+    btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
+    if(maxed)btn.style.opacity='0.4';
+    c.appendChild(btn);
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -2276,6 +2596,23 @@ document.getElementById('wallet-modal').addEventListener('click', function(e){
 });
 document.getElementById('block-modal').addEventListener('click', function(e){
   if(e.target === this) closeBlockModal();
+});
+
+/* Rig page */
+document.getElementById('rig-back-btn').addEventListener('click', function(){
+  hideRigPage();
+  switchTab('mine');
+});
+document.getElementById('rig-page-grid').addEventListener('click', function(e){
+  var cell=e.target.closest('.grid-cell');
+  if(!cell)return;
+  var action=cell.getAttribute('data-grid-action');
+  if(action==='buy') openBuyPanel();
+  else if(action==='unlock') unlockGridSlot(cell.getAttribute('data-grid-idx'));
+});
+document.getElementById('rig-page-sw').addEventListener('click', function(e){
+  var btn=e.target.closest('.grid-sw-btn');
+  if(btn&&btn.dataset.swUpg) buyUpgrade(btn.dataset.swUpg);
 });
 
 /* Nickname submission */
