@@ -897,6 +897,48 @@ body::after{
   background:rgba(0,200,255,.1);
   box-shadow:0 0 15px rgba(0,200,255,.2);
 }
+
+/* ═══════════════════════════════════════════
+   PRESTIGE SYSTEM
+   ═══════════════════════════════════════════ */
+.prestige-section{margin-top:14px;text-align:center;}
+.prestige-btn{
+  display:none;width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;font-size:14px;color:#000;letter-spacing:2px;
+  background:linear-gradient(135deg,#ffd700,#ffaa00,#ffd700);
+  box-shadow:0 0 20px rgba(255,215,0,.4),inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .15s,box-shadow .15s;
+}
+.prestige-btn.visible{display:block;animation:prestige-glow 2s ease-in-out infinite;}
+.prestige-btn:active{transform:scale(.97);}
+@keyframes prestige-glow{
+  0%,100%{box-shadow:0 0 20px rgba(255,215,0,.4),inset 0 1px 0 rgba(255,255,255,.3);}
+  50%{box-shadow:0 0 35px rgba(255,215,0,.7),inset 0 1px 0 rgba(255,255,255,.3);}
+}
+.prestige-stat{display:none;color:var(--y);font-size:13px;font-family:'Orbitron',sans-serif;text-shadow:var(--gy);}
+.prestige-stat.visible{display:block;}
+.prestige-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(5,10,14,.9);backdrop-filter:blur(8px);
+  justify-content:center;align-items:center;padding:20px;
+}
+.prestige-overlay.show{display:flex;}
+.prestige-modal{
+  background:var(--s1);border:2px solid var(--y);border-radius:16px;
+  width:100%;max-width:380px;padding:24px;text-align:center;
+  box-shadow:0 0 40px rgba(255,204,0,.2);
+}
+.prestige-modal-icon{font-size:48px;margin-bottom:10px;}
+.prestige-modal-title{font-family:'Orbitron',sans-serif;font-size:18px;color:var(--y);margin-bottom:12px;}
+.prestige-modal-desc{font-size:12px;color:var(--text);line-height:1.6;margin-bottom:16px;}
+.prestige-modal-warn{font-size:11px;color:var(--r);margin-bottom:16px;}
+.prestige-modal-btns{display:flex;gap:10px;}
+.prestige-modal-btns button{
+  flex:1;padding:12px;border:none;border-radius:10px;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;font-size:13px;
+}
+.prestige-confirm{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000;font-weight:bold;}
+.prestige-cancel{background:var(--s2);color:var(--muted);border:1px solid var(--border) !important;}
 </style>
 </head>
 <body>
@@ -999,6 +1041,10 @@ body::after{
       <div class="stat-val font-title" id="stat-total">0</div>
       <div class="stat-label">TOTAL MINED</div>
     </div>
+    <div class="stat-item prestige-stat" id="stat-prestige">
+      <div class="stat-val font-title" id="stat-prestige-val">0</div>
+      <div class="stat-label">PRESTIGE</div>
+    </div>
   </div>
 
   <!-- TAB NAV -->
@@ -1045,6 +1091,23 @@ body::after{
         <div class="action-icon">🔧</div>
         <div class="action-name">Repair</div>
         <div class="action-cost" id="cost-repair">30 HC</div>
+      </div>
+    </div>
+    <div class="prestige-section">
+      <button class="prestige-btn" id="btn-prestige">PRESTIGE</button>
+    </div>
+  </div>
+
+  <!-- PRESTIGE CONFIRM MODAL -->
+  <div class="prestige-overlay" id="prestige-overlay">
+    <div class="prestige-modal">
+      <div class="prestige-modal-icon">⭐</div>
+      <div class="prestige-modal-title font-title">PRESTIGE</div>
+      <div class="prestige-modal-desc" id="prestige-modal-desc"></div>
+      <div class="prestige-modal-warn">Coins, upgrades, energy, blocks and quests will be reset!</div>
+      <div class="prestige-modal-btns">
+        <button class="prestige-cancel" id="prestige-cancel">CANCEL</button>
+        <button class="prestige-confirm" id="prestige-confirm">PRESTIGE!</button>
       </div>
     </div>
   </div>
@@ -1315,6 +1378,7 @@ const DEFAULTS = deepFreeze({
   dailyEnergyUsed:0, dailyEnergyMax:1000,
   dailyDate:'', dailyRefills:0,
   sessionMineStart:0, overheated:false, overheatEnd:0,
+  prestigeCount:0, prestigeTokens:0,
   gridUnlocked:4,
   upg:{
     gpu1:{l:0,max:10},gpu2:{l:0,max:8},asic:{l:0,max:5},rack:{l:0,max:3},
@@ -1437,7 +1501,8 @@ const STATE_KEYS = [
   'pvpTotalStolen','pvpTotalLost','pvpAtkCounts','pvpKills',
   'quests','questDate','sellCount','repairCount',
   'dailyEnergyUsed','dailyEnergyMax','dailyDate','dailyRefills',
-  'sessionMineStart','overheated','overheatEnd','gridUnlocked'
+  'sessionMineStart','overheated','overheatEnd','gridUnlocked',
+  'prestigeCount','prestigeTokens'
 ];
 
 /* ═══════════════════════════════════════════
@@ -2020,11 +2085,12 @@ function calcHashRate(){
   hr += S.upg.rack.l * 100;
   hr += S.upg.quantum.l * 200;
   hr *= (1 + S.upg.oc.l * 0.5);
+  hr *= (1 + S.prestigeCount * 0.05);
   S.hashRate = Math.floor(hr);
 }
 
 function calcDailyEnergyMax(){
-  S.dailyEnergyMax = 1000 + S.upg.battery.l * 200;
+  S.dailyEnergyMax = 1000 + S.upg.battery.l * 200 + S.prestigeCount * 50;
 }
 
 function calcDefense(){
@@ -2882,6 +2948,8 @@ function fbSave(){
     pvpTotalLost:S.pvpTotalLost,
     clicks:S.clicks,
     gridUnlocked:S.gridUnlocked,
+    prestigeCount:S.prestigeCount,
+    prestigeTokens:S.prestigeTokens,
     lastSeen:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true}).catch(function(){});
@@ -2907,6 +2975,12 @@ function fbLoad(){
     }
     if(typeof d.blocksFound==='number'&&d.blocksFound>S.blocksFound){
       S.blocksFound=d.blocksFound;
+    }
+    if(typeof d.prestigeCount==='number'&&d.prestigeCount>S.prestigeCount){
+      S.prestigeCount=d.prestigeCount;
+    }
+    if(typeof d.prestigeTokens==='number'&&d.prestigeTokens>S.prestigeTokens){
+      S.prestigeTokens=d.prestigeTokens;
     }
     updateUI();
   }).catch(function(){});
@@ -2941,6 +3015,74 @@ function switchTab(tab){
 }
 
 /* switchSub removed — replaced by grid */
+
+/* ═══════════════════════════════════════════
+   PRESTIGE SYSTEM
+   ═══════════════════════════════════════════ */
+function canPrestige(){
+  return Object.keys(S.upg).every(function(k){return S.upg[k].l>=S.upg[k].max;});
+}
+
+function getPrestigeTitle(n){
+  if(n>=10) return 'Hash Tanrisi';
+  if(n>=5)  return 'Efsane';
+  if(n>=3)  return 'Usta';
+  if(n>=2)  return 'Deneyimli';
+  if(n>=1)  return 'Caylak';
+  return '';
+}
+
+function showPrestigeModal(){
+  var next=S.prestigeCount+1;
+  var desc='Prestige #'+next+' — '+getPrestigeTitle(next)+'\n\n'+
+    '+5% hashrate bonus (total: '+(next*5)+'%)\n'+
+    '+50 daily energy (total: '+(next*50)+')\n'+
+    '+1 Prestige Token';
+  document.getElementById('prestige-modal-desc').textContent=desc;
+  document.getElementById('prestige-overlay').classList.add('show');
+}
+
+function hidePrestigeModal(){
+  document.getElementById('prestige-overlay').classList.remove('show');
+}
+
+function doPrestige(){
+  if(!canPrestige())return;
+  hidePrestigeModal();
+
+  S.prestigeCount++;
+  S.prestigeTokens++;
+
+  /* Reset: coins, upgrades, grid, energy/cool/health, blocks, clicks, quests, overheat */
+  S.coins=0;
+  S.energy=100; S.maxEnergy=100;
+  S.cool=100; S.maxCool=100;
+  S.health=100; S.maxHealth=100;
+  S.blockProg=0; S.blockTarget=100; S.blocksFound=0;
+  S.clicks=0; S.autoMiners=0;
+  S.dailyEnergyUsed=0; S.dailyRefills=0;
+  S.sessionMineStart=0; S.overheated=false; S.overheatEnd=0;
+  S.gridUnlocked=4;
+  S.sellCount=0; S.repairCount=0;
+  S.quests=[]; S.questDate='';
+
+  /* Reset all upgrade levels */
+  Object.keys(S.upg).forEach(function(k){S.upg[k]={l:0,max:DEFAULTS.upg[k].max};});
+
+  /* Recalc derived stats */
+  calcHashRate();
+  calcDefense();
+  calcAutoMiners();
+  calcDailyEnergyMax();
+  generateQuests();
+
+  save();
+  updateUI();
+  renderGrid();
+  renderQuests();
+
+  showToast('⭐ PRESTIGE! +5% HR, +50 Energy — '+getPrestigeTitle(S.prestigeCount));
+}
 
 /* ═══════════════════════════════════════════
    UI UPDATE
@@ -2996,6 +3138,14 @@ function updateUI(){
   }else{
     rigLabel.textContent='TAP TO MINE';rigLabel.style.color='var(--g)';
   }
+
+  /* Prestige UI */
+  var pStat=document.getElementById('stat-prestige');
+  if(pStat) pStat.classList.toggle('visible', S.prestigeCount>0);
+  var pVal=document.getElementById('stat-prestige-val');
+  if(pVal) pVal.textContent=S.prestigeCount;
+  var pBtn=document.getElementById('btn-prestige');
+  if(pBtn) pBtn.classList.toggle('visible', canPrestige());
 
   if(rigPageOpen) updateRigPageStats();
 }
@@ -3815,6 +3965,12 @@ document.getElementById('rig-page-sw').addEventListener('click', function(e){
   var btn=e.target.closest('.grid-sw-btn');
   if(btn&&btn.dataset.swUpg) buyUpgrade(btn.dataset.swUpg);
 });
+
+/* Prestige */
+document.getElementById('btn-prestige').addEventListener('click', function(){if(canPrestige())showPrestigeModal();});
+document.getElementById('prestige-confirm').addEventListener('click', doPrestige);
+document.getElementById('prestige-cancel').addEventListener('click', hidePrestigeModal);
+document.getElementById('prestige-overlay').addEventListener('click', function(e){if(e.target===this)hidePrestigeModal();});
 
 /* Nickname submission */
 document.getElementById('nick-submit').addEventListener('click', submitNickname);
