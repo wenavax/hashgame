@@ -1059,7 +1059,8 @@ const DEFAULTS = deepFreeze({
   upg:{
     gpu1:{l:0,max:10},gpu2:{l:0,max:8},asic:{l:0,max:5},rack:{l:0,max:3},
     algo:{l:0,max:5},pool:{l:0,max:5},oc:{l:0,max:3},
-    shield:{l:0,max:5},firewall:{l:0,max:5},vault:{l:0,max:3}
+    shield:{l:0,max:5},firewall:{l:0,max:5},vault:{l:0,max:3},
+    quantum:{l:0,max:2},cache:{l:0,max:3},coolsys:{l:0,max:3},battery:{l:0,max:3}
   }
 });
 
@@ -1073,7 +1074,11 @@ const UPGRADES = deepFreeze({
   oc:    {icon:'🚀', name:'GPU Overclock',       desc:'+50% hash rate per level',     base:2000,  mult:5.0, cat:'sw'},
   shield:{icon:'🛡️', name:'Energy Shield',       desc:'+10 defense per level',        base:300,   mult:2.5, cat:'def'},
   firewall:{icon:'🔒',name:'Firewall',           desc:'+20 defense per level',        base:800,   mult:3.0, cat:'def'},
-  vault: {icon:'🏦', name:'Coin Vault',          desc:'Protect 20% coins per level',  base:5000,  mult:4.0, cat:'def'}
+  vault: {icon:'🏦', name:'Coin Vault',          desc:'Protect 20% coins per level',  base:5000,  mult:4.0, cat:'def'},
+  quantum:{icon:'⚛️', name:'Quantum Processor',   desc:'+200 H/s per level',           base:100000,mult:5.0, cat:'hw'},
+  cache:  {icon:'💾', name:'Hash Cache',           desc:'+10% block progress per level', base:1500,  mult:3.0, cat:'sw'},
+  coolsys:{icon:'🧊', name:'Liquid Cooling',       desc:'Raises min cooling efficiency', base:800,   mult:2.5, cat:'sw'},
+  battery:{icon:'🔋', name:'UPS Battery',          desc:'+200 daily energy per level',   base:3000,  mult:3.5, cat:'def'}
 });
 
 const ENEMIES = deepFreeze([
@@ -1198,17 +1203,39 @@ function validateNickname(name){
 }
 function showNicknameModal(){document.getElementById('nick-overlay').classList.remove('hidden');}
 function hideNicknameModal(){document.getElementById('nick-overlay').classList.add('hidden');}
-function submitNickname(){
+async function submitNickname(){
   var input=document.getElementById('nick-input');
   var name=input.value.trim();
   var error=validateNickname(name);
   var errorEl=document.getElementById('nick-error');
   if(error){errorEl.textContent=error;return;}
   errorEl.textContent='';
+
+  var btn=document.getElementById('nick-submit');
+  btn.disabled=true;btn.textContent='Checking...';
+
+  /* Check Firestore for duplicate nickname */
+  try{
+    if(_fbReady&&_fb){
+      var snap=await _fb.db.collection('players')
+        .where('nicknameLower','==',name.toLowerCase()).limit(1).get();
+      if(!snap.empty){
+        var myDocId=fbDocId();
+        var taken=false;
+        snap.forEach(function(doc){if(doc.id!==myDocId)taken=true;});
+        if(taken){
+          errorEl.textContent='Nickname taken! Try another.';
+          btn.disabled=false;btn.textContent='START MINING ⛏️';return;
+        }
+      }
+    }
+  }catch(e){/* Firebase offline — allow graceful degradation */}
+
   setNickname(name);
   hideNicknameModal();
   updateHeader();
-  _fbLastSync=0;fbSave(); /* create Firestore doc immediately */
+  btn.disabled=false;btn.textContent='START MINING ⛏️';
+  _fbLastSync=0;fbSave();
 }
 function updateHeader(){
   var nick=getNickname();
@@ -1283,14 +1310,15 @@ var HW_TYPES=[
   {id:'gpu1',icon:'🖥️',name:'GPU'},
   {id:'gpu2',icon:'💻',name:'RTX'},
   {id:'asic',icon:'⚙️',name:'ASIC'},
-  {id:'rack',icon:'🏗️',name:'RACK'}
+  {id:'rack',icon:'🏗️',name:'RACK'},
+  {id:'quantum',icon:'⚛️',name:'QUANTUM'}
 ];
 var GRID_UNLOCK_COSTS=[0,0,0,0,1000,2000,5000,10000,20000,40000,80000,160000,300000,500000,800000,1000000];
 
 function getUnlockCost(idx){return GRID_UNLOCK_COSTS[idx]||1000000;}
 
 function getTotalHardware(){
-  return S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l;
+  return S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l+S.upg.quantum.l;
 }
 
 function renderGrid(){
@@ -1346,7 +1374,7 @@ function openBuyPanel(){
   var totalHw=getTotalHardware();
   var hasSpace=totalHw<S.gridUnlocked;
 
-  ['gpu1','gpu2','asic','rack'].forEach(function(id){
+  ['gpu1','gpu2','asic','rack','quantum'].forEach(function(id){
     var u=UPGRADES[id];var lv=S.upg[id].l;var mx=S.upg[id].max;
     var cost=uCost(id);var maxed=lv>=mx;var canBuy=S.coins>=cost&&!maxed&&hasSpace;
 
@@ -1379,6 +1407,7 @@ function renderSwPanel(){
   c.textContent='';
   var items=[
     {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
+    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'},
     {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
   ];
   items.forEach(function(item){
@@ -1519,8 +1548,13 @@ function calcHashRate(){
   hr += S.upg.gpu2.l * 8;
   hr += S.upg.asic.l * 25;
   hr += S.upg.rack.l * 100;
+  hr += S.upg.quantum.l * 200;
   hr *= (1 + S.upg.oc.l * 0.5);
   S.hashRate = Math.floor(hr);
+}
+
+function calcDailyEnergyMax(){
+  S.dailyEnergyMax = 1000 + S.upg.battery.l * 200;
 }
 
 function calcDefense(){
@@ -1588,12 +1622,13 @@ function load(){
     S.health = Math.min(S.health, S.maxHealth);
 
     /* Grid migration: grandfather existing hardware */
-    var totalHw = S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l;
+    var totalHw = S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l+S.upg.quantum.l;
     if(totalHw > S.gridUnlocked) S.gridUnlocked = Math.min(16, totalHw);
 
     calcHashRate();
     calcDefense();
     calcAutoMiners();
+    calcDailyEnergyMax();
   }catch(e){
     showToast('⚠️ Save data corrupted — starting fresh');
     S = JSON.parse(JSON.stringify(DEFAULTS));
@@ -1647,17 +1682,20 @@ function doMine(){
   S.cool = Math.max(0, S.cool - 0.8);
   S.health = Math.max(0, S.health - 0.3);
 
-  var coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+  var coolFloor = 0.6 + S.upg.coolsys.l * 0.05;
+  var coolEff = coolFloor + (S.cool / S.maxCool) * (1 - coolFloor);
+  var healthEff = 0.7 + (S.health / S.maxHealth) * 0.3;
   var algoEff = 1 + S.upg.algo.l * 0.15;
   var variance = 0.8 + Math.random()*0.4;
-  var gain = S.hashRate * S.coinMult[S.coin] * coolEff * algoEff * variance;
+  var gain = S.hashRate * S.coinMult[S.coin] * coolEff * healthEff * algoEff * variance;
 
   S.coins += gain;
   S.total += gain;
   S.best = Math.max(S.best, S.coins);
   S.clicks++;
 
-  S.blockProg += S.hashRate;
+  var cacheBonus = 1 + S.upg.cache.l * 0.1;
+  S.blockProg += S.hashRate * cacheBonus;
   if(S.blockProg >= S.blockTarget) foundBlock();
 
   checkQuest('mine', gain);
@@ -1717,16 +1755,19 @@ function startAutoMine(){
     S.cool = Math.max(0, S.cool - 0.2);
     S.health = Math.max(0, S.health - 0.1);
 
-    var coolEff = S.cool > 20 ? 1 : (0.5 + (S.cool/20)*0.5);
+    var coolFloor = 0.6 + S.upg.coolsys.l * 0.05;
+    var coolEff = coolFloor + (S.cool / S.maxCool) * (1 - coolFloor);
+    var healthEff = 0.7 + (S.health / S.maxHealth) * 0.3;
     var algoEff = 1 + S.upg.algo.l * 0.15;
     var variance = 0.8 + Math.random()*0.4;
-    var gain = S.hashRate * 0.5 * S.coinMult[S.coin] * coolEff * algoEff * variance;
+    var gain = S.hashRate * 0.5 * S.coinMult[S.coin] * coolEff * healthEff * algoEff * variance;
 
     S.coins += gain;
     S.total += gain;
     S.best = Math.max(S.best, S.coins);
 
-    S.blockProg += S.hashRate * 0.5;
+    var cacheBonus = 1 + S.upg.cache.l * 0.1;
+    S.blockProg += S.hashRate * 0.5 * cacheBonus;
     if(S.blockProg >= S.blockTarget) foundBlock();
 
     checkQuest('mine', gain);
@@ -1818,6 +1859,7 @@ function buyUpgrade(id){
   calcHashRate();
   calcDefense();
   calcAutoMiners();
+  calcDailyEnergyMax();
 
   if(S.autoMiners > 0) startAutoMine();
 
@@ -2234,6 +2276,7 @@ function fbSave(){
   var nick=getNickname()||'';
   _fb.db.collection('players').doc(docId).set({
     nickname:nick,
+    nicknameLower:nick.toLowerCase(),
     walletAddress:docId,
     coins:Math.floor(S.coins),
     totalMined:Math.floor(S.total),
@@ -2507,6 +2550,7 @@ function renderRigPageSwPanel(){
   c.textContent='';
   var items=[
     {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
+    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'},
     {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
   ];
   items.forEach(function(item){
@@ -2639,6 +2683,7 @@ async function init(){
   calcHashRate();
   calcDefense();
   calcAutoMiners();
+  calcDailyEnergyMax();
 
   /* Nickname check */
   if(!getNickname()){
