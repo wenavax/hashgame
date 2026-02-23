@@ -36,6 +36,8 @@ contract HashRigNFT is ERC721, Ownable, ReentrancyGuard {
     uint256 public winnerPool;
     uint256 public loserPool;
 
+    mapping(address => bool) public hasMintedFree;
+
     struct Attributes {
         uint8 hashPower;    // ATK  1-100
         uint8 firewall;     // DEF  1-100
@@ -134,6 +136,45 @@ contract HashRigNFT is ERC721, Ownable, ReentrancyGuard {
         else if (total >= 350) attr.rarity = 2; // Epic ~4%
         else if (total >= 300) attr.rarity = 1; // Rare ~20%
         else                   attr.rarity = 0; // Common ~76%
+
+        attributes[tokenId] = attr;
+        _safeMint(msg.sender, tokenId);
+
+        emit Minted(tokenId, msg.sender, attr.hashPower, attr.firewall, attr.algorithm, attr.cooling, attr.luck, attr.rarity);
+    }
+
+    /**
+     * @notice Free first mint — one per wallet, no ETH required.
+     */
+    function freeMint() external nonReentrant {
+        require(!hasMintedFree[msg.sender], "Already claimed free mint");
+        hasMintedFree[msg.sender] = true;
+
+        uint256 tokenId = ++_nextTokenId;
+
+        bytes32 seed = keccak256(abi.encodePacked(
+            block.prevrandao,
+            block.timestamp,
+            msg.sender,
+            tokenId,
+            _nextTokenId,
+            blockhash(block.number - 1)
+        ));
+        tokenSeed[tokenId] = seed;
+
+        Attributes memory attr;
+        attr.hashPower = _bellCurve(seed, 0);
+        attr.firewall  = _bellCurve(seed, 1);
+        attr.algorithm = _bellCurve(seed, 2);
+        attr.cooling   = _bellCurve(seed, 3);
+        attr.luck      = _bellCurve(seed, 4);
+
+        uint16 total = uint16(attr.hashPower) + uint16(attr.firewall) +
+                       uint16(attr.algorithm) + uint16(attr.cooling) + uint16(attr.luck);
+        if (total >= 400)      attr.rarity = 3;
+        else if (total >= 350) attr.rarity = 2;
+        else if (total >= 300) attr.rarity = 1;
+        else                   attr.rarity = 0;
 
         attributes[tokenId] = attr;
         _safeMint(msg.sender, tokenId);

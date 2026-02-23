@@ -1002,15 +1002,15 @@ body::after{
 
   <!-- TAB NAV -->
   <div class="tab-nav" id="tab-nav">
-    <div class="tab-btn active" data-tab="mine">⛏ MINE</div>
+    <div class="tab-btn active" data-tab="nft">💎 NFT</div>
+    <div class="tab-btn" data-tab="mine">⛏ MINE</div>
     <div class="tab-btn" data-tab="rig">🔧 RIG</div>
     <div class="tab-btn" data-tab="quests">📋 QUESTS</div>
     <div class="tab-btn" data-tab="pvp">⚔️ PVP</div>
-    <div class="tab-btn" data-tab="nft">💎 NFT</div>
   </div>
 
   <!-- ═══ MINE TAB ═══ -->
-  <div class="tab-content active" id="tab-mine">
+  <div class="tab-content" id="tab-mine">
     <div id="session-bar" class="session-bar" style="display:none;"></div>
     <div class="block-prog" style="display:none">
       <div class="block-label"><span>⛏ Block Progress</span><span id="block-text">0 / 100</span></div>
@@ -1075,7 +1075,7 @@ body::after{
   </div>
 
   <!-- ═══ NFT TAB ═══ -->
-  <div class="tab-content" id="tab-nft">
+  <div class="tab-content active" id="tab-nft">
     <div class="nft-sub-tabs">
       <div class="nft-sub-tab active" data-nsub="mint">MINT</div>
       <div class="nft-sub-tab" data-nsub="gallery">MY NFTs</div>
@@ -1096,7 +1096,7 @@ body::after{
           <div class="nft-pool-box"><div class="pool-label">Total Supply</div><div class="pool-val text-b" id="nft-supply">0</div></div>
         </div>
         <div style="text-align:center;margin:16px 0">
-          <button class="btn btn-g" id="btn-mint-nft" style="font-size:14px;padding:12px 24px;">Mint HashRig NFT (0.0001 ETH)</button>
+          <button class="btn btn-g" id="btn-mint-nft" style="font-size:14px;padding:12px 24px;">Free Mint (First NFT!)</button>
         </div>
         <div class="nft-tx-status" id="nft-tx-status"></div>
       </div>
@@ -1122,11 +1122,11 @@ body::after{
 
 <!-- BOTTOM NAV -->
 <div class="bottom-nav" id="bottom-nav">
-  <div class="bnav-btn active" data-tab="mine"><span class="bnav-icon">⛏</span>Mine</div>
+  <div class="bnav-btn active" data-tab="nft"><span class="bnav-icon">💎</span>NFT</div>
+  <div class="bnav-btn" data-tab="mine"><span class="bnav-icon">⛏</span>Mine</div>
   <div class="bnav-btn" data-tab="rig"><span class="bnav-icon">🔧</span>Rig</div>
   <div class="bnav-btn" data-tab="quests"><span class="bnav-icon">📋</span>Quests</div>
   <div class="bnav-btn" data-tab="pvp"><span class="bnav-icon">⚔️</span>PvP</div>
-  <div class="bnav-btn" data-tab="nft"><span class="bnav-icon">💎</span>NFT</div>
 </div>
 
 <!-- WALLET MODAL -->
@@ -2915,7 +2915,7 @@ function fbLoad(){
    TAB SWITCHING
    ═══════════════════════════════════════════ */
 function switchTab(tab){
-  var tabs = ['mine','rig','quests','pvp','nft'];
+  var tabs = ['nft','mine','rig','quests','pvp'];
   if(tabs.indexOf(tab) === -1) return;
 
   /* RIG opens full-screen page */
@@ -3210,7 +3210,7 @@ function renderRigPageSwPanel(){
 /* ═══════════════════════════════════════════
    NFT SYSTEM — MetaMask + On-chain PvP
    ═══════════════════════════════════════════ */
-var NFT_CONTRACT_ADDR = '0x3aaEF35dDCD249f91E81D1f6e6d0494b809cd472';
+var NFT_CONTRACT_ADDR = '0x8432a87e31A0c4CC113e4E3fB1670463b105CBC0';
 var BASE_CHAIN_ID = '0x2105'; // 8453
 var BASE_SEPOLIA_CHAIN_ID = '0x14a34'; // 84532
 var ACTIVE_CHAIN_ID = BASE_SEPOLIA_CHAIN_ID; // Switch to BASE_CHAIN_ID for mainnet
@@ -3218,6 +3218,8 @@ var ACTIVE_RPC = 'https://sepolia.base.org';
 
 var NFT_ABI = [
   'function mint() external payable',
+  'function freeMint() external',
+  'function hasMintedFree(address) external view returns (bool)',
   'function tokensOfOwner(address) external view returns (uint256[])',
   'function getAttributes(uint256) external view returns (tuple(uint8 hashPower,uint8 firewall,uint8 algorithm,uint8 cooling,uint8 luck,uint8 rarity,uint8 losses,uint32 wins,uint32 totalBattles))',
   'function tokenURI(uint256) external view returns (string)',
@@ -3291,6 +3293,7 @@ async function connectMetaMask(){
     /* Register in Firebase for matchmaking */
     registerNftPlayer();
     listenNftChallenges();
+    updateMintButton();
     refreshNftTab();
   }catch(e){
     nftTxStatus('Connection failed: '+(e.message||e),'error');
@@ -3308,17 +3311,33 @@ function nftTxStatus(msg,type){
 async function mintNft(){
   if(!_mm.connected||!_mm.contract){nftTxStatus('Connect MetaMask first','error');return;}
   try{
-    nftTxStatus('Sending mint transaction...','pending');
-    var tx = await _mm.contract.mint({value:ethers.parseEther('0.0001')});
+    var isFree = !(await _mm.contract.hasMintedFree(_mm.address));
+    if(isFree){
+      nftTxStatus('Sending free mint transaction...','pending');
+      var tx = await _mm.contract.freeMint();
+    }else{
+      nftTxStatus('Sending mint transaction...','pending');
+      var tx = await _mm.contract.mint({value:ethers.parseEther('0.0001')});
+    }
     nftTxStatus('TX sent: '+tx.hash.slice(0,10)+'... Waiting for confirmation...','pending');
     var receipt = await tx.wait();
     nftTxStatus('Minted successfully! TX: '+receipt.hash.slice(0,10)+'...','success');
+    updateMintButton();
     refreshNftTab();
   }catch(e){
     var msg = e.reason||e.message||'Mint failed';
     if(msg.length>80) msg=msg.slice(0,80)+'...';
     nftTxStatus(msg,'error');
   }
+}
+
+async function updateMintButton(){
+  var btn=document.getElementById('btn-mint-nft');
+  if(!btn||!_mm.connected||!_mm.contract) return;
+  try{
+    var used = await _mm.contract.hasMintedFree(_mm.address);
+    btn.textContent = used ? 'Mint HashRig NFT (0.0001 ETH)' : 'Free Mint (First NFT!)';
+  }catch(e){}
 }
 
 async function refreshNftTab(){
