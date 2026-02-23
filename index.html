@@ -486,6 +486,10 @@ body::after{
 .grid-sw-btn:active{transform:scale(.96);}
 .grid-sw-btn .sw-icon{font-size:18px;display:block;margin-bottom:2px;}
 .grid-sw-btn .sw-lvl{display:block;color:var(--b);margin-top:1px;}
+.grid-sw-btn.sw-cat{border-color:rgba(0,255,136,.25);}
+.grid-sw-btn.def-cat{border-color:rgba(0,200,255,.25);}
+.grid-sw-btn .sw-effect{display:block;font-size:8px;color:var(--g);margin-top:1px;opacity:.7;}
+.sw-category-hdr{grid-column:1/-1;font-size:11px;color:var(--muted);padding:6px 0 2px;letter-spacing:1px;font-family:'Orbitron',sans-serif;border-bottom:1px solid var(--border);margin-bottom:2px;}
 
 /* ═══════════════════════════════════════════
    BATTLE ARENA
@@ -676,8 +680,14 @@ body::after{
 
 /* PvP Tier Badges */
 .tier-badge{position:absolute;top:4px;right:6px;font-size:8px;letter-spacing:1px;font-family:'Orbitron',sans-serif;}
-.pvp-streak-bar{font-size:12px;color:var(--o);text-align:center;padding:8px;margin-bottom:8px;}
+.pvp-streak-bar{font-size:13px;color:var(--o);text-align:center;padding:10px;margin-bottom:8px;background:linear-gradient(135deg,rgba(255,136,0,.08),rgba(255,68,68,.08));border-radius:8px;border:1px solid rgba(255,136,0,.2);}
 .pvp-log-entry{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border);}
+.pvp-stats-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;padding:8px;background:var(--s1);border-radius:10px;border:1px solid var(--border);}
+.pvp-stat-item{text-align:center;padding:6px 4px;}
+.pvp-stat-val{font-size:16px;font-family:'Orbitron',sans-serif;color:var(--g);}
+.pvp-stat-label{font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.5px;}
+.pvp-stat-fav{grid-column:1/-1;text-align:center;font-size:11px;color:var(--b);padding:4px;border-top:1px solid var(--border);}
+.enemy-kills{font-size:9px;color:var(--muted);margin-top:2px;}
 
 /* ═══════════════════════════════════════════
    FULL-SCREEN RIG PAGE
@@ -923,10 +933,6 @@ body::after{
       <div class="stat-val font-title" id="stat-total">0</div>
       <div class="stat-label">TOTAL MINED</div>
     </div>
-    <div class="stat-item">
-      <div class="stat-val font-title" id="stat-hr">1</div>
-      <div class="stat-label">H/s RATE</div>
-    </div>
   </div>
 
   <!-- TAB NAV -->
@@ -940,7 +946,7 @@ body::after{
   <!-- ═══ MINE TAB ═══ -->
   <div class="tab-content active" id="tab-mine">
     <div id="session-bar" class="session-bar" style="display:none;"></div>
-    <div class="block-prog">
+    <div class="block-prog" style="display:none">
       <div class="block-label"><span>⛏ Block Progress</span><span id="block-text">0 / 100</span></div>
       <div class="block-bar"><div class="block-fill" id="block-fill" style="width:0%"></div></div>
     </div>
@@ -979,7 +985,6 @@ body::after{
   <!-- ═══ RIG (GRID) TAB ═══ -->
   <div class="tab-content" id="tab-rig">
     <div id="rig-grid" class="rig-grid"></div>
-    <div style="font-size:11px;color:var(--muted);text-align:center;margin:8px 0 4px;">⚙️ Software & Defense</div>
     <div id="sw-panel" class="grid-sw-panel"></div>
   </div>
 
@@ -991,6 +996,7 @@ body::after{
 
   <!-- ═══ PVP TAB ═══ -->
   <div class="tab-content" id="tab-pvp">
+    <div id="pvp-stats-panel" class="pvp-stats-panel"></div>
     <div class="pvp-rules">
       ⚔️ <b>PvP Arena</b> — Choose your attack, battle miners, steal their coins.<br>
       ⚡ Quick Strike: faster cooldown · 💥 Heavy: more damage · 👻 Stealth: bypass defense
@@ -1123,7 +1129,7 @@ body::after{
   <div class="rig-page-stats">
     <div class="rig-stat-item">
       <span class="rig-stat-val font-title" id="rig-stat-hr">0</span>
-      <span class="rig-stat-label">H/s</span>
+      <span class="rig-stat-label">HASH POWER</span>
     </div>
     <div class="rig-stat-item">
       <span class="rig-stat-val font-title" id="rig-stat-def">0</span>
@@ -1131,15 +1137,14 @@ body::after{
     </div>
     <div class="rig-stat-item">
       <span class="rig-stat-val font-title" id="rig-stat-auto">0</span>
-      <span class="rig-stat-label">AUTO</span>
+      <span class="rig-stat-label">AUTO MINERS</span>
     </div>
     <div class="rig-stat-item">
       <span class="rig-stat-val font-title" id="rig-stat-coins">0</span>
-      <span class="rig-stat-label">HC</span>
+      <span class="rig-stat-label">COINS</span>
     </div>
   </div>
   <div class="rig-page-grid" id="rig-page-grid"></div>
-  <div class="rig-page-sw-label">SOFTWARE & DEFENSE</div>
   <div class="rig-page-sw" id="rig-page-sw"></div>
 </div>
 
@@ -1192,6 +1197,7 @@ const DEFAULTS = deepFreeze({
   coinMult:{BTC:1.0,ETH:1.5,SOL:2.0},
   defenseRating:10,
   pvpWins:0, pvpLosses:0, lastAttack:0, pvpStreak:0, pvpBestStreak:0, pvpLog:[],
+  pvpTotalStolen:0, pvpTotalLost:0, pvpAtkCounts:{quick:0,heavy:0,stealth:0}, pvpKills:{},
   quests:[], questDate:'',
   sellCount:0, repairCount:0,
   dailyEnergyUsed:0, dailyEnergyMax:1000,
@@ -1258,13 +1264,56 @@ var TIER_COLORS = {
 var TIER_REWARD_MULT = {bronze:1, silver:1.2, gold:1.5, diamond:2};
 
 const QUEST_TPL = deepFreeze([
-  {id:'mine',   name:'Hash Master', desc:'Mine {n} HC',      targets:[500,1000,2500,5000], rewardMult:0.5},
-  {id:'block',  name:'Block Hunter',desc:'Find {n} blocks',  targets:[1,3,5,10],           rewardMult:100},
-  {id:'click',  name:'Tap King',    desc:'Tap {n} times',    targets:[50,100,200,500],      rewardMult:2},
-  {id:'upgrade',name:'Engineer',    desc:'Buy {n} upgrades', targets:[1,2,3,5],             rewardMult:50},
-  {id:'sell',   name:'Trader',      desc:'Sell {n} times',   targets:[1,3,5],               rewardMult:30},
-  {id:'repair', name:'Mechanic',    desc:'Repair {n} times', targets:[1,2,3],               rewardMult:40},
-  {id:'pvpwin', name:'Raider',      desc:'Win {n} PvP',      targets:[1,2,3],               rewardMult:80}
+  /* MINING (6) */
+  {id:'mine',     name:'Hash Master',    desc:'Mine {n} HC',               targets:[500,1000,2500,5000],  rewardMult:0.5},
+  {id:'mine_btc', name:'BTC Miner',      desc:'Mine {n} HC using BTC',     targets:[300,800,2000],        rewardMult:0.6},
+  {id:'mine_eth', name:'ETH Miner',      desc:'Mine {n} HC using ETH',     targets:[300,800,2000],        rewardMult:0.6},
+  {id:'mine_sol', name:'SOL Miner',      desc:'Mine {n} HC using SOL',     targets:[300,800,2000],        rewardMult:0.6},
+  {id:'automine', name:'Auto Farmer',    desc:'Earn {n} HC from auto-mine',targets:[200,500,1500,4000],   rewardMult:0.4},
+  {id:'daily_active',name:'Daily Grinder',desc:'Mine {n} taps today',      targets:[30,60,120,250],       rewardMult:3},
+  /* TAPPING (2) */
+  {id:'click',    name:'Tap King',       desc:'Tap {n} times',             targets:[50,100,200,500],      rewardMult:2},
+  {id:'session_taps',name:'Speed Tapper',desc:'Tap {n} times this session',targets:[20,40,80],            rewardMult:4},
+  /* BLOCKS (4) */
+  {id:'block',     name:'Block Hunter',  desc:'Find {n} blocks',           targets:[1,3,5,10],            rewardMult:100},
+  {id:'block_btc', name:'BTC Blocks',    desc:'Find {n} blocks mining BTC',targets:[1,2,4],               rewardMult:120},
+  {id:'block_eth', name:'ETH Blocks',    desc:'Find {n} blocks mining ETH',targets:[1,2,4],               rewardMult:120},
+  {id:'block_sol', name:'SOL Blocks',    desc:'Find {n} blocks mining SOL',targets:[1,2,4],               rewardMult:120},
+  /* PVP (12) */
+  {id:'pvpwin',      name:'Raider',        desc:'Win {n} PvP battles',         targets:[1,2,3,5],       rewardMult:80},
+  {id:'pvp_quick',   name:'Quick Draw',    desc:'Win {n} Quick Strike battles', targets:[1,2,3],         rewardMult:90},
+  {id:'pvp_heavy',   name:'Brute Force',   desc:'Win {n} Heavy Attack battles', targets:[1,2,3],         rewardMult:100},
+  {id:'pvp_stealth', name:'Shadow Hacker', desc:'Win {n} Stealth Hack battles', targets:[1,2,3],         rewardMult:100},
+  {id:'pvp_bronze',  name:'Bronze Buster', desc:'Beat {n} Bronze enemies',      targets:[1,2,3],         rewardMult:60},
+  {id:'pvp_silver',  name:'Silver Slayer', desc:'Beat {n} Silver enemies',      targets:[1,2],           rewardMult:120},
+  {id:'pvp_gold',    name:'Gold Crusher',  desc:'Beat {n} Gold enemies',        targets:[1,2],           rewardMult:200},
+  {id:'pvp_diamond', name:'Diamond Hunter',desc:'Beat {n} Diamond enemies',     targets:[1],             rewardMult:500},
+  {id:'pvp_streak',  name:'Win Streak',    desc:'Reach a {n} win streak',       targets:[3,5,8],         rewardMult:150, mode:'hwm'},
+  {id:'pvp_crit',    name:'Critical Hitter',desc:'Land {n} critical hits',      targets:[1,2,3],         rewardMult:100},
+  {id:'pvp_steal',   name:'Coin Raider',   desc:'Steal {n} HC from PvP',        targets:[500,2000,8000], rewardMult:0.3},
+  {id:'pvp_fight',   name:'Arena Fighter', desc:'Fight {n} PvP battles',        targets:[2,4,6],         rewardMult:50},
+  /* ECONOMY (5) */
+  {id:'sell',       name:'Trader',       desc:'Sell {n} times',            targets:[1,3,5],             rewardMult:30},
+  {id:'earn_total', name:'Tycoon',       desc:'Earn {n} total HC',         targets:[5000,20000,80000],  rewardMult:0.15, mode:'hwm'},
+  {id:'spend',      name:'Big Spender',  desc:'Spend on {n} upgrades',     targets:[1,3,5],             rewardMult:60},
+  {id:'balance',    name:'Hoarder',      desc:'Hold {n} HC at once',       targets:[2000,10000,50000],  rewardMult:0.1, mode:'hwm'},
+  {id:'sell_profit', name:'Profit King', desc:'Sell {n} HC worth of coins',targets:[1000,5000,20000],   rewardMult:0.2},
+  /* RESOURCES (5) */
+  {id:'recharge',  name:'Energizer',    desc:'Recharge energy {n} times', targets:[1,2,4],             rewardMult:40},
+  {id:'cooldown',  name:'Cool Operator',desc:'Cool rig {n} times',        targets:[1,2,4],             rewardMult:40},
+  {id:'repair',    name:'Mechanic',     desc:'Repair rig {n} times',      targets:[1,2,3],             rewardMult:40},
+  {id:'overheat',  name:'Overheat Survivor',desc:'Survive {n} overheats', targets:[1,2,3],             rewardMult:60},
+  {id:'energy_save',name:'Efficient Miner',desc:'Mine {n} with 50%+ energy',targets:[200,600,1500],    rewardMult:0.5},
+  /* UPGRADES (5) */
+  {id:'upgrade',     name:'Engineer',       desc:'Buy {n} upgrades',          targets:[1,2,3,5],         rewardMult:50},
+  {id:'unlock_slot', name:'Grid Expander',  desc:'Unlock {n} grid slots',     targets:[1,2],             rewardMult:200},
+  {id:'reach_hr',    name:'Hash Pioneer',   desc:'Reach {n} H/s hash rate',   targets:[10,50,200,500],   rewardMult:5, mode:'hwm'},
+  {id:'reach_def',   name:'Fortress',       desc:'Reach {n} defense rating',  targets:[30,70,150],       rewardMult:4, mode:'hwm'},
+  {id:'max_upgrade', name:'Maxed Out',      desc:'Max out {n} upgrade types',targets:[1,2,3],            rewardMult:300},
+  /* COMBO (3) */
+  {id:'mine_and_sell', name:'Flip Master',    desc:'Mine & sell {n} times each',targets:[1,2,3],         rewardMult:60},
+  {id:'allrounder',    name:'All-Rounder',    desc:'Mine, sell & PvP {n} each', targets:[1,2],           rewardMult:120},
+  {id:'no_repair',     name:'Iron Rig',       desc:'Mine {n} HC without repair',targets:[500,1500,4000], rewardMult:0.4}
 ]);
 
 /* Whitelisted state keys for safe loading */
@@ -1273,6 +1322,7 @@ const STATE_KEYS = [
   'energy','maxEnergy','cool','maxCool','health','maxHealth',
   'blockProg','blockTarget','blocksFound','clicks','autoMiners',
   'coin','defenseRating','pvpWins','pvpLosses','lastAttack','pvpStreak','pvpBestStreak','pvpLog',
+  'pvpTotalStolen','pvpTotalLost','pvpAtkCounts','pvpKills',
   'quests','questDate','sellCount','repairCount',
   'dailyEnergyUsed','dailyEnergyMax','dailyDate','dailyRefills',
   'sessionMineStart','overheated','overheatEnd','gridUnlocked'
@@ -1493,8 +1543,13 @@ function renderGrid(){
   container.textContent='';
 
   var hwItems=[];
+  var hwCount={};
   HW_TYPES.forEach(function(hw){
-    for(var i=0;i<S.upg[hw.id].l;i++)hwItems.push({icon:hw.icon,name:hw.name,type:hw.id});
+    if(!hwCount[hw.id])hwCount[hw.id]=0;
+    for(var i=0;i<S.upg[hw.id].l;i++){
+      hwCount[hw.id]++;
+      hwItems.push({icon:hw.icon,name:hw.name+' #'+hwCount[hw.id],type:hw.id});
+    }
   });
 
   for(var i=0;i<16;i++){
@@ -1529,6 +1584,7 @@ function unlockGridSlot(idx){
   if(S.coins<cost){showToast('Need '+fmt(cost)+' HC to unlock!');return;}
   S.coins-=cost;
   S.gridUnlocked++;
+  checkQuest('unlock_slot', 1);
   showToast('🔓 Grid slot unlocked!');
   renderGrid();updateUI();
   if(rigPageOpen){renderRigPageGrid();updateRigPageStats();}
@@ -1571,23 +1627,23 @@ function renderSwPanel(){
   var c=document.getElementById('sw-panel');
   if(!c)return;
   c.textContent='';
-  var items=[
+
+  var swHdr=document.createElement('div');swHdr.className='sw-category-hdr';swHdr.textContent='SOFTWARE';
+  c.appendChild(swHdr);
+
+  var swItems=[
     {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
-    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'},
+    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'}
+  ];
+  swItems.forEach(function(item){c.appendChild(createSwBtn(item,'sw'));});
+
+  var defHdr=document.createElement('div');defHdr.className='sw-category-hdr';defHdr.textContent='DEFENSE';
+  c.appendChild(defHdr);
+
+  var defItems=[
     {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
   ];
-  items.forEach(function(item){
-    var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
-    var btn=document.createElement('div');btn.className='grid-sw-btn';
-    btn.setAttribute('data-sw-upg',item.id);
-    var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
-    var nm=document.createElement('span');nm.textContent=item.name;
-    var lbl=document.createElement('span');lbl.className='sw-lvl';
-    lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
-    btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
-    if(maxed)btn.style.opacity='0.4';
-    c.appendChild(btn);
-  });
+  defItems.forEach(function(item){c.appendChild(createSwBtn(item,'def'));});
 }
 
 /* ═══════════════════════════════════════════
@@ -1672,7 +1728,7 @@ function startBattle(enemyIdx,atkType){
   /* Set info */
   document.getElementById('battle-player-icon').textContent='⛏';
   document.getElementById('battle-player-name').textContent=getNickname()||'You';
-  document.getElementById('battle-player-stat').textContent=S.hashRate+' H/s';
+  document.getElementById('battle-player-stat').textContent='Power: '+fmt(S.hashRate);
   document.getElementById('battle-enemy-icon').textContent=enemy.icon;
   document.getElementById('battle-enemy-name').textContent=enemy.name;
   document.getElementById('battle-enemy-stat').textContent=enemy.def+' DEF';
@@ -1765,7 +1821,18 @@ function startBattle(enemyIdx,atkType){
       var streakBonus=1+Math.min(S.pvpStreak*0.05,0.5);
       var stolen=Math.floor(baseSteal*tierMult*critMult*streakBonus*atkType.dmgMod);
       S.coins+=stolen;S.total+=stolen;S.pvpWins++;
+      S.pvpTotalStolen+=stolen;
+      S.pvpAtkCounts[atkType.id]=(S.pvpAtkCounts[atkType.id]||0)+1;
+      if(!S.pvpKills[enemy.name])S.pvpKills[enemy.name]=0;
+      S.pvpKills[enemy.name]++;
       checkQuest('pvpwin',1);
+      checkQuest('pvp_'+atkType.id,1);
+      checkQuest('pvp_'+(enemy.tier||'bronze'),1);
+      if(isCrit) checkQuest('pvp_crit',1);
+      checkQuest('pvp_steal',stolen);
+      checkQuest('pvp_fight',1);
+      checkQuest('pvp_streak',S.pvpStreak);
+      checkQuest('allrounder',1);
       playerRig.classList.add('battle-rig-glow');
       enemyRig.classList.add('battle-rig-fade');
       resultEl.className='battle-result-text win show';
@@ -1789,6 +1856,9 @@ function startBattle(enemyIdx,atkType){
       var vulnerable=S.coins*(1-vaultProt);
       var lost=Math.floor(vulnerable*0.05);
       S.coins=Math.max(0,S.coins-lost);S.pvpLosses++;
+      S.pvpTotalLost+=lost;
+      S.pvpAtkCounts[atkType.id]=(S.pvpAtkCounts[atkType.id]||0)+1;
+      checkQuest('pvp_fight',1);
       S.pvpStreak=0;
       enemyRig.classList.add('battle-rig-glow');
       playerRig.classList.add('battle-rig-fade');
@@ -1802,7 +1872,7 @@ function startBattle(enemyIdx,atkType){
       S.pvpLog.unshift({enemy:enemy.name,win:false,crit:false,amount:lost,atk:atkType.id,time:Date.now()});
     }
     if(S.pvpLog.length>10)S.pvpLog.pop();
-    updateUI();renderEnemies();renderBattleLog();renderPvpStreak();
+    updateUI();renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();
   },6000);
 
   /* === PHASE 6: CLOSE (8.0s) === */
@@ -1888,6 +1958,18 @@ function load(){
         if(Array.isArray(parsed.quests)) S.quests = sanitizeQuests(parsed.quests);
       } else if(k === 'pvpLog'){
         if(Array.isArray(parsed.pvpLog)) S.pvpLog = sanitizePvpLog(parsed.pvpLog);
+      } else if(k === 'pvpAtkCounts'){
+        if(parsed.pvpAtkCounts&&typeof parsed.pvpAtkCounts==='object'){
+          S.pvpAtkCounts={quick:clampNum(parsed.pvpAtkCounts.quick,0,1e9),heavy:clampNum(parsed.pvpAtkCounts.heavy,0,1e9),stealth:clampNum(parsed.pvpAtkCounts.stealth,0,1e9)};
+        }
+      } else if(k === 'pvpKills'){
+        if(parsed.pvpKills&&typeof parsed.pvpKills==='object'){
+          S.pvpKills={};
+          Object.keys(parsed.pvpKills).forEach(function(name){
+            if(typeof name==='string'&&name.length<=30&&typeof parsed.pvpKills[name]==='number')
+              S.pvpKills[name]=clampNum(parsed.pvpKills[name],0,1e9);
+          });
+        }
       } else if(k === 'questDate' || k === 'dailyDate'){
         if(typeof parsed[k] === 'string') S[k] = parsed[k].slice(0,10);
       } else if(typeof DEFAULTS[k] === 'boolean'){
@@ -1927,14 +2009,14 @@ function load(){
 
 function sanitizeQuests(arr){
   if(!Array.isArray(arr)) return [];
-  return arr.slice(0,3).map(function(q){
+  return arr.slice(0,10).map(function(q){
     return {
       id: typeof q.id === 'string' ? q.id.slice(0,20) : '',
-      name: typeof q.name === 'string' ? q.name.slice(0,30) : '',
-      desc: typeof q.desc === 'string' ? q.desc.slice(0,50) : '',
-      target: clampNum(q.target, 1, 100000),
-      progress: clampNum(q.progress, 0, 100000),
-      reward: clampNum(q.reward, 0, 100000),
+      name: typeof q.name === 'string' ? q.name.slice(0,40) : '',
+      desc: typeof q.desc === 'string' ? q.desc.slice(0,60) : '',
+      target: clampNum(q.target, 1, 1e7),
+      progress: clampNum(q.progress, 0, 1e7),
+      reward: clampNum(q.reward, 0, 1e7),
       done: q.done === true
     };
   });
@@ -1977,6 +2059,7 @@ function doMine(){
     S.overheated=true;
     S.overheatEnd=Date.now()+60000;
     S.sessionMineStart=0;
+    checkQuest('overheat', 1);
     showToast('🔥 RIG OVERHEATED! 60s cooldown.');
     updateSessionBar();updateUI();return;
   }
@@ -2004,6 +2087,14 @@ function doMine(){
 
   checkQuest('mine', gain);
   checkQuest('click', 1);
+  checkQuest('daily_active', 1);
+  checkQuest('session_taps', 1);
+  checkQuest('mine_'+S.coin.toLowerCase(), gain);
+  if(S.energy>=S.maxEnergy*0.5) checkQuest('energy_save', gain);
+  checkQuest('earn_total', S.total);
+  checkQuest('balance', S.coins);
+  checkQuest('reach_hr', S.hashRate);
+  checkQuest('no_repair', gain);
 
   spawnParticle('+' + fmt(gain));
   var rig = document.getElementById('rig-card');
@@ -2029,6 +2120,7 @@ function foundBlock(){
   S.best = Math.max(S.best, S.coins);
 
   checkQuest('block', 1);
+  checkQuest('block_'+S.coin.toLowerCase(), 1);
 
   document.getElementById('block-reward').textContent = '+' + fmt(reward) + ' HC';
   document.getElementById('block-num').textContent = 'Block #' + S.blocksFound;
@@ -2075,6 +2167,7 @@ function startAutoMine(){
     if(S.blockProg >= S.blockTarget) foundBlock();
 
     checkQuest('mine', gain);
+    checkQuest('automine', gain);
     updateUI();
   }, 1200);
 }
@@ -2088,6 +2181,7 @@ function refillEnergy(){
   S.coins -= cost;
   S.energy = Math.min(S.maxEnergy, S.energy + 50);
   S.dailyRefills++;
+  checkQuest('recharge', 1);
   showToast('⚡ +50 Energy');
   updateUI();
 }
@@ -2098,6 +2192,7 @@ function refillCooling(){
   S.coins -= cost;
   S.cool = S.maxCool;
   S.dailyRefills++;
+  checkQuest('cooldown', 1);
   showToast('❄️ Cooling restored');
   updateUI();
 }
@@ -2110,6 +2205,8 @@ function repairRig(){
   S.repairCount++;
   S.dailyRefills++;
   checkQuest('repair', 1);
+  /* Reset no_repair quest progress on repair */
+  S.quests.forEach(function(q){if(q.id==='no_repair'&&!q.done)q.progress=0;});
   showToast('🔧 Rig repaired');
   updateUI();
 }
@@ -2125,6 +2222,8 @@ function doSell(){
   S.coins = 0;
   S.sellCount++;
   checkQuest('sell', 1);
+  checkQuest('sell_profit', amount);
+  checkQuest('mine_and_sell', 1);
   showToast('💰 Sold ' + fmt(amount) + ' HC (+' + fmt(bonus) + ' bonus)');
   updateUI();
 }
@@ -2159,6 +2258,11 @@ function buyUpgrade(id){
   S.coins -= cost;
   S.upg[id] = {l: S.upg[id].l + 1, max: S.upg[id].max};
   checkQuest('upgrade', 1);
+  checkQuest('spend', 1);
+  checkQuest('reach_def', S.defenseRating);
+  /* Check max_upgrade: count fully maxed upgrade types */
+  var maxedCount=0;Object.keys(S.upg).forEach(function(u){if(S.upg[u].l>=S.upg[u].max)maxedCount++;});
+  checkQuest('max_upgrade', maxedCount);
 
   calcHashRate();
   calcDefense();
@@ -2183,33 +2287,59 @@ function todayStr(){
   return new Date().toISOString().slice(0,10);
 }
 
+var QUEST_DIFF = [
+  {label:'',       mult:1},
+  {label:'[HARD] ',mult:2},
+  {label:'[EXTREME] ',mult:5}
+];
+
 function generateQuests(){
   var today = todayStr();
-  if(S.questDate === today && S.quests.length === 3) return;
+  if(S.questDate === today && S.quests.length >= 5) return;
 
   S.questDate = today;
   S.quests = [];
 
+  /* Seed RNG from date for reproducible daily variety */
+  var count = 5 + Math.floor(Math.random() * 6); /* 5-10 quests */
   var shuffled = QUEST_TPL.slice().sort(function(){return Math.random()-0.5;});
-  for(var i=0;i<3;i++){
+  var usedIds = {};
+
+  for(var i=0; i<shuffled.length && S.quests.length<count; i++){
     var tpl = shuffled[i];
+    if(usedIds[tpl.id]) continue;
+    usedIds[tpl.id] = true;
+
     var target = tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
+    var diff = QUEST_DIFF[Math.floor(Math.random()*QUEST_DIFF.length)];
+    var finalTarget = Math.floor(target * diff.mult);
+    var rewardBoost = diff.mult >= 5 ? 3 : diff.mult >= 2 ? 1.8 : 1;
+
     S.quests.push({
       id: tpl.id,
-      name: tpl.name,
-      desc: tpl.desc.replace('{n}', target),
-      target: target,
+      name: diff.label + tpl.name,
+      desc: tpl.desc.replace('{n}', fmt(finalTarget)),
+      target: finalTarget,
       progress: 0,
-      reward: Math.floor(target * tpl.rewardMult),
+      reward: Math.floor(finalTarget * tpl.rewardMult * rewardBoost),
       done: false
     });
   }
 }
 
 function checkQuest(type, amount){
+  /* Find mode from QUEST_TPL */
+  var tplMode={};
+  QUEST_TPL.forEach(function(t){if(t.mode)tplMode[t.id]=t.mode;});
+
   S.quests.forEach(function(q){
     if(q.done || q.id !== type) return;
-    q.progress = Math.min(q.target, q.progress + amount);
+    if(tplMode[q.id]==='hwm'){
+      /* High-water-mark: progress = max value reached */
+      q.progress = Math.max(q.progress, Math.min(q.target, Math.floor(amount)));
+    } else {
+      q.progress = Math.min(q.target, q.progress + amount);
+    }
     if(q.progress >= q.target && !q.done){
       q.done = true;
       S.coins += q.reward;
@@ -2222,6 +2352,13 @@ function checkQuest(type, amount){
 function renderQuests(){
   var container = document.getElementById('quest-list');
   container.textContent = '';
+
+  /* Completion header */
+  var done=0;S.quests.forEach(function(q){if(q.done)done++;});
+  var hdr=document.createElement('div');
+  hdr.style.cssText='font-size:12px;color:var(--muted);margin-bottom:8px;text-align:center;';
+  hdr.textContent='Daily Quests ('+done+'/'+S.quests.length+')';
+  container.appendChild(hdr);
 
   S.quests.forEach(function(q){
     var pct = Math.min(100, (q.progress/q.target)*100);
@@ -2338,6 +2475,14 @@ function renderEnemies(){
     tierBadge.style.color=tier.color;
     tierBadge.textContent=tier.label;
 
+    /* Kill count */
+    var kills=S.pvpKills[e.name]||0;
+    if(kills>0){
+      var killDiv=document.createElement('div');killDiv.className='enemy-kills';
+      killDiv.textContent='Defeated '+kills+'x';
+      infoDiv.appendChild(killDiv);
+    }
+
     card.appendChild(iconDiv);
     card.appendChild(infoDiv);
     card.appendChild(winDiv);
@@ -2374,9 +2519,48 @@ function renderPvpStreak(){
   if(S.pvpStreak>0){
     var bonus=Math.min(S.pvpStreak*5,50);
     el.style.display='block';
-    el.textContent='🔥 Win Streak: '+S.pvpStreak+' (+'+bonus+'% bonus)';
+    var fires='';for(var i=0;i<Math.min(S.pvpStreak,10);i++)fires+='🔥';
+    el.textContent=fires+' Win Streak: '+S.pvpStreak+' (+'+bonus+'% bonus) '+(S.pvpStreak>=5?'UNSTOPPABLE!':'');
   }else{
     el.style.display='none';
+  }
+}
+
+function renderPvpStats(){
+  var c=document.getElementById('pvp-stats-panel');
+  if(!c)return;
+  c.textContent='';
+
+  var totalFights=S.pvpWins+S.pvpLosses;
+  var winRate=totalFights>0?Math.round(S.pvpWins/totalFights*100):0;
+
+  var stats=[
+    {val:S.pvpWins, label:'WINS', color:'var(--g)'},
+    {val:S.pvpLosses, label:'LOSSES', color:'var(--r)'},
+    {val:winRate+'%', label:'WIN RATE', color:'var(--b)'},
+    {val:S.pvpBestStreak, label:'BEST STREAK', color:'var(--o)'},
+    {val:fmt(S.pvpTotalStolen), label:'HC STOLEN', color:'var(--g)'},
+    {val:fmt(S.pvpTotalLost), label:'HC LOST', color:'var(--r)'}
+  ];
+
+  stats.forEach(function(s){
+    var item=document.createElement('div');item.className='pvp-stat-item';
+    var val=document.createElement('div');val.className='pvp-stat-val';val.textContent=s.val;val.style.color=s.color;
+    var lbl=document.createElement('div');lbl.className='pvp-stat-label';lbl.textContent=s.label;
+    item.appendChild(val);item.appendChild(lbl);
+    c.appendChild(item);
+  });
+
+  /* Favorite attack */
+  var maxAtk='quick';var maxCount=0;
+  Object.keys(S.pvpAtkCounts).forEach(function(k){
+    if(S.pvpAtkCounts[k]>maxCount){maxCount=S.pvpAtkCounts[k];maxAtk=k;}
+  });
+  if(totalFights>0){
+    var atkInfo=ATTACK_TYPES.find(function(a){return a.id===maxAtk;});
+    var fav=document.createElement('div');fav.className='pvp-stat-fav';
+    fav.textContent='Favorite: '+(atkInfo?atkInfo.icon+' '+atkInfo.name:'Unknown')+' ('+maxCount+' uses)';
+    c.appendChild(fav);
   }
 }
 
@@ -2582,6 +2766,8 @@ function fbSave(){
     pvpLosses:S.pvpLosses,
     pvpStreak:S.pvpStreak,
     pvpBestStreak:S.pvpBestStreak,
+    pvpTotalStolen:S.pvpTotalStolen,
+    pvpTotalLost:S.pvpTotalLost,
     clicks:S.clicks,
     gridUnlocked:S.gridUnlocked,
     lastSeen:firebase.firestore.FieldValue.serverTimestamp(),
@@ -2638,7 +2824,7 @@ function switchTab(tab){
   });
 
   if(tab==='quests') renderQuests();
-  if(tab==='pvp'){renderEnemies();renderBattleLog();renderPvpStreak();}
+  if(tab==='pvp'){renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();}
 }
 
 /* switchSub removed — replaced by grid */
@@ -2649,7 +2835,7 @@ function switchTab(tab){
 function updateUI(){
   document.getElementById('stat-coins').textContent = fmt(S.coins);
   document.getElementById('stat-total').textContent = fmt(S.total);
-  document.getElementById('stat-hr').textContent = fmt(S.hashRate);
+  var statHr=document.getElementById('stat-hr');if(statHr)statHr.textContent=fmt(S.hashRate);
 
   document.getElementById('res-energy-text').textContent = Math.floor(S.energy)+'/'+S.maxEnergy;
   document.getElementById('res-energy-bar').style.width = (S.energy/S.maxEnergy*100)+'%';
@@ -2658,9 +2844,13 @@ function updateUI(){
   document.getElementById('res-health-text').textContent = Math.floor(S.health)+'/'+S.maxHealth;
   document.getElementById('res-health-bar').style.width = (S.health/S.maxHealth*100)+'%';
 
-  var blockPct = Math.min(100, S.blockProg/S.blockTarget*100);
-  document.getElementById('block-fill').style.width = blockPct+'%';
-  document.getElementById('block-text').textContent = fmt(S.blockProg)+' / '+fmt(S.blockTarget);
+  var blockFillEl=document.getElementById('block-fill');
+  var blockTextEl=document.getElementById('block-text');
+  if(blockFillEl&&blockTextEl){
+    var blockPct = Math.min(100, S.blockProg/S.blockTarget*100);
+    blockFillEl.style.width = blockPct+'%';
+    blockTextEl.textContent = fmt(S.blockProg)+' / '+fmt(S.blockTarget);
+  }
 
   document.querySelector('#coin-BTC .c-mult').textContent = 'x'+S.coinMult.BTC.toFixed(2);
   document.querySelector('#coin-ETH .c-mult').textContent = 'x'+S.coinMult.ETH.toFixed(2);
@@ -2813,8 +3003,13 @@ function renderRigPageGrid(){
   container.textContent='';
 
   var hwItems=[];
+  var hwCount={};
   HW_TYPES.forEach(function(hw){
-    for(var i=0;i<S.upg[hw.id].l;i++) hwItems.push({icon:hw.icon,name:hw.name});
+    if(!hwCount[hw.id])hwCount[hw.id]=0;
+    for(var i=0;i<S.upg[hw.id].l;i++){
+      hwCount[hw.id]++;
+      hwItems.push({icon:hw.icon,name:hw.name+' #'+hwCount[hw.id]});
+    }
   });
 
   for(var i=0;i<16;i++){
@@ -2842,27 +3037,62 @@ function renderRigPageGrid(){
   renderRigPageSwPanel();
 }
 
+var SW_EFFECTS={
+  algo:function(l){return l>0?'+'+l*15+'% eff':''},
+  pool:function(l){return l>0?'+'+l*20+'% block':''},
+  oc:function(l){return l>0?'+'+l*50+'% H/s':''},
+  cache:function(l){return l>0?'+'+l*10+'% block prog':''},
+  coolsys:function(l){return l>0?'+'+l*5+'% cool floor':''},
+  battery:function(l){return l>0?'+'+l*200+' energy':''},
+  shield:function(l){return l>0?'+'+l*10+' DEF':''},
+  firewall:function(l){return l>0?'+'+l*20+' DEF':''},
+  vault:function(l){return l>0?l*20+'% protect':''}
+};
+
+function createSwBtn(item,cat){
+  var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
+  var btn=document.createElement('div');btn.className='grid-sw-btn '+(cat==='def'?'def-cat':'sw-cat');
+  btn.setAttribute('data-sw-upg',item.id);
+  var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
+  var nm=document.createElement('span');nm.textContent=item.name;
+  var lbl=document.createElement('span');lbl.className='sw-lvl';
+  lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
+  btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
+  var eff=SW_EFFECTS[item.id];
+  if(eff){
+    var effText=eff(lv);
+    if(effText){
+      var effEl=document.createElement('span');effEl.className='sw-effect';
+      effEl.textContent=effText;
+      if(cat==='def')effEl.style.color='var(--b)';
+      btn.appendChild(effEl);
+    }
+  }
+  if(maxed)btn.style.opacity='0.4';
+  return btn;
+}
+
 function renderRigPageSwPanel(){
   var c=document.getElementById('rig-page-sw');
   if(!c)return;
   c.textContent='';
-  var items=[
+
+  var swHdr=document.createElement('div');swHdr.className='sw-category-hdr';swHdr.textContent='SOFTWARE';
+  c.appendChild(swHdr);
+
+  var swItems=[
     {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
-    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'},
+    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'}
+  ];
+  swItems.forEach(function(item){c.appendChild(createSwBtn(item,'sw'));});
+
+  var defHdr=document.createElement('div');defHdr.className='sw-category-hdr';defHdr.textContent='DEFENSE';
+  c.appendChild(defHdr);
+
+  var defItems=[
     {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
   ];
-  items.forEach(function(item){
-    var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
-    var btn=document.createElement('div');btn.className='grid-sw-btn';
-    btn.setAttribute('data-sw-upg',item.id);
-    var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
-    var nm=document.createElement('span');nm.textContent=item.name;
-    var lbl=document.createElement('span');lbl.className='sw-lvl';
-    lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
-    btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
-    if(maxed)btn.style.opacity='0.4';
-    c.appendChild(btn);
-  });
+  defItems.forEach(function(item){c.appendChild(createSwBtn(item,'def'));});
 }
 
 /* ═══════════════════════════════════════════
@@ -3016,6 +3246,7 @@ async function init(){
   updateUI();
   renderGrid();
   renderQuests();
+  renderPvpStats();
   renderEnemies();
   renderBattleLog();
   renderPvpStreak();
