@@ -308,6 +308,7 @@ body::after{
 .nft-pool-box{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;}
 .nft-pool-box .pool-label{font-size:10px;color:var(--muted);}
 .nft-pool-box .pool-val{font-size:14px;font-family:'Orbitron',sans-serif;margin-top:4px;}
+.nft-card-img{width:calc(100% + 24px);margin:-12px -12px 12px -12px;border-radius:10px 10px 0 0;display:block;}
 .nft-card{
   background:var(--s1);border:1px solid var(--border);border-radius:12px;
   padding:12px;margin-bottom:10px;position:relative;overflow:hidden;
@@ -3361,8 +3362,14 @@ async function loadMyNfts(){
       var id=tokenIds[i];
       var attr=await _mm.contract.getAttributes(id);
       var activeCh=await _mm.contract.activeChallenge(id);
+      var imageUri='';
+      try{
+        var uri=await _mm.contract.tokenURI(id);
+        var json=JSON.parse(atob(uri.split(',')[1]));
+        imageUri=json.image||'';
+      }catch(e){}
       _myNfts.push({
-        id:Number(id),
+        id:Number(id),imageUri:imageUri,
         hashPower:attr.hashPower,firewall:attr.firewall,algorithm:attr.algorithm,
         cooling:attr.cooling,luck:attr.luck,rarity:attr.rarity,
         losses:attr.losses,wins:Number(attr.wins),totalBattles:Number(attr.totalBattles),
@@ -3384,6 +3391,7 @@ function renderNftGallery(){
     card.className='nft-card rarity-'+nft.rarity;
     var lives=10-nft.losses;
     card.innerHTML=
+      (nft.imageUri?'<img class="nft-card-img" src="'+nft.imageUri+'" alt="HashRig #'+nft.id+'">':'')+
       '<div class="nft-card-head">'+
         '<span class="nft-card-id">HashRig #'+nft.id+'</span>'+
         '<span class="nft-rarity-badge '+RARITY_CLASSES[nft.rarity]+'">'+RARITY_NAMES[nft.rarity]+'</span>'+
