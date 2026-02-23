@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com https://firestore.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.cloudfunctions.net; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.binance.com https://firestore.googleapis.com https://*.firebaseio.com https://identitytoolkit.googleapis.com https://*.cloudfunctions.net https://mainnet.base.org https://sepolia.base.org; upgrade-insecure-requests">
 <title>HashRig — Crypto Mining Simulator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
@@ -288,6 +288,71 @@ body::after{
 .enemy-name{font-size:13px;font-weight:700;}
 .enemy-stats{font-size:10px;color:var(--muted);margin-top:1px;}
 .enemy-win{font-size:12px;font-weight:700;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════
+   NFT TAB
+   ═══════════════════════════════════════════ */
+.nft-sub-tabs{display:flex;gap:4px;margin-bottom:10px;}
+.nft-sub-tab{
+  flex:1;padding:8px 4px;text-align:center;border-radius:6px;
+  background:var(--s2);border:1px solid transparent;cursor:pointer;
+  font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;
+}
+.nft-sub-tab.active{border-color:var(--y);color:var(--y);}
+.nft-sub-content{display:none;}
+.nft-sub-content.active{display:block;}
+.nft-connect-box{text-align:center;padding:20px 10px;}
+.nft-connect-box p{color:var(--muted);font-size:12px;margin-bottom:12px;}
+.nft-mm-addr{font-size:11px;color:var(--g);margin-top:8px;word-break:break-all;}
+.nft-pool-info{display:flex;gap:8px;margin:10px 0;}
+.nft-pool-box{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px;text-align:center;}
+.nft-pool-box .pool-label{font-size:10px;color:var(--muted);}
+.nft-pool-box .pool-val{font-size:14px;font-family:'Orbitron',sans-serif;margin-top:4px;}
+.nft-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:12px;
+  padding:12px;margin-bottom:10px;position:relative;overflow:hidden;
+}
+.nft-card.rarity-0{border-color:#636e72;}
+.nft-card.rarity-1{border-color:#00c8ff;box-shadow:0 0 8px rgba(0,200,255,.2);}
+.nft-card.rarity-2{border-color:#9b59b6;box-shadow:0 0 8px rgba(155,89,182,.3);}
+.nft-card.rarity-3{border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.4);}
+.nft-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.nft-card-id{font-family:'Orbitron',sans-serif;font-size:13px;}
+.nft-rarity-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;}
+.rarity-common{background:#636e72;color:#fff;}
+.rarity-rare{background:#0984e3;color:#fff;}
+.rarity-epic{background:#8e44ad;color:#fff;}
+.rarity-legendary{background:#ff8c00;color:#fff;}
+.nft-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0;}
+.nft-stat-row{display:flex;align-items:center;gap:6px;font-size:11px;}
+.nft-stat-label{width:30px;color:var(--muted);}
+.nft-stat-bar{flex:1;height:6px;background:var(--s2);border-radius:3px;overflow:hidden;}
+.nft-stat-fill{height:100%;border-radius:3px;}
+.nft-stat-val{width:22px;text-align:right;font-size:10px;}
+.nft-card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px;}
+.nft-lives{color:var(--r);}
+.nft-record{color:var(--muted);}
+.nft-tx-status{text-align:center;font-size:12px;padding:8px;margin:8px 0;border-radius:8px;display:none;}
+.nft-tx-status.show{display:block;}
+.nft-tx-status.pending{background:rgba(255,204,0,.1);color:var(--y);border:1px solid rgba(255,204,0,.3);}
+.nft-tx-status.success{background:rgba(0,255,136,.1);color:var(--g);border:1px solid rgba(0,255,136,.3);}
+.nft-tx-status.error{background:rgba(255,68,68,.1);color:var(--r);border:1px solid rgba(255,68,68,.3);}
+.nft-arena-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:10px;
+  padding:10px;margin-bottom:8px;display:flex;align-items:center;gap:10px;
+}
+.nft-arena-info{flex:1;font-size:11px;}
+.nft-arena-info .arena-name{font-size:13px;font-weight:700;}
+.nft-arena-info .arena-stats{color:var(--muted);margin-top:2px;}
+.nft-challenge-item{
+  background:var(--s2);border:1px solid var(--y);border-radius:8px;
+  padding:10px;margin-bottom:8px;
+}
+.nft-challenge-item .ch-title{font-size:12px;font-weight:700;color:var(--y);}
+.nft-challenge-item .ch-info{font-size:11px;color:var(--muted);margin-top:4px;}
+.nft-section-title{font-size:12px;color:var(--muted);margin:12px 0 6px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+.nft-empty{text-align:center;padding:20px;color:var(--muted);font-size:12px;}
+.nft-chain-badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(0,82,221,.2);color:#74b9ff;margin-left:6px;}
 
 /* ═══════════════════════════════════════════
    BOTTOM NAV
@@ -941,6 +1006,7 @@ body::after{
     <div class="tab-btn" data-tab="rig">🔧 RIG</div>
     <div class="tab-btn" data-tab="quests">📋 QUESTS</div>
     <div class="tab-btn" data-tab="pvp">⚔️ PVP</div>
+    <div class="tab-btn" data-tab="nft">💎 NFT</div>
   </div>
 
   <!-- ═══ MINE TAB ═══ -->
@@ -1008,6 +1074,50 @@ body::after{
     <div id="pvp-log"></div>
   </div>
 
+  <!-- ═══ NFT TAB ═══ -->
+  <div class="tab-content" id="tab-nft">
+    <div class="nft-sub-tabs">
+      <div class="nft-sub-tab active" data-nsub="mint">MINT</div>
+      <div class="nft-sub-tab" data-nsub="gallery">MY NFTs</div>
+      <div class="nft-sub-tab" data-nsub="arena">ARENA</div>
+    </div>
+
+    <!-- MINT SUB-TAB -->
+    <div class="nft-sub-content active" id="nsub-mint">
+      <div class="nft-connect-box" id="nft-connect-box">
+        <p>Connect MetaMask to mint and battle NFTs on Base<span class="nft-chain-badge">Base</span></p>
+        <button class="btn btn-y" id="btn-connect-mm">Connect MetaMask</button>
+        <div class="nft-mm-addr" id="nft-mm-addr" style="display:none"></div>
+      </div>
+      <div id="nft-mint-area" style="display:none">
+        <div class="nft-pool-info">
+          <div class="nft-pool-box"><div class="pool-label">Winner Pool</div><div class="pool-val text-g" id="nft-winner-pool">0 ETH</div></div>
+          <div class="nft-pool-box"><div class="pool-label">Loser Pool</div><div class="pool-val text-r" id="nft-loser-pool">0 ETH</div></div>
+          <div class="nft-pool-box"><div class="pool-label">Total Supply</div><div class="pool-val text-b" id="nft-supply">0</div></div>
+        </div>
+        <div style="text-align:center;margin:16px 0">
+          <button class="btn btn-g" id="btn-mint-nft" style="font-size:14px;padding:12px 24px;">Mint HashRig NFT (0.0001 ETH)</button>
+        </div>
+        <div class="nft-tx-status" id="nft-tx-status"></div>
+      </div>
+    </div>
+
+    <!-- GALLERY SUB-TAB -->
+    <div class="nft-sub-content" id="nsub-gallery">
+      <div id="nft-gallery-list"></div>
+    </div>
+
+    <!-- ARENA SUB-TAB -->
+    <div class="nft-sub-content" id="nsub-arena">
+      <div class="nft-section-title">Incoming Challenges</div>
+      <div id="nft-incoming-challenges"></div>
+      <div class="nft-section-title">My Active Challenges</div>
+      <div id="nft-my-challenges"></div>
+      <div class="nft-section-title">Online Players</div>
+      <div id="nft-arena-players"></div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <!-- BOTTOM NAV -->
@@ -1016,6 +1126,7 @@ body::after{
   <div class="bnav-btn" data-tab="rig"><span class="bnav-icon">🔧</span>Rig</div>
   <div class="bnav-btn" data-tab="quests"><span class="bnav-icon">📋</span>Quests</div>
   <div class="bnav-btn" data-tab="pvp"><span class="bnav-icon">⚔️</span>PvP</div>
+  <div class="bnav-btn" data-tab="nft"><span class="bnav-icon">💎</span>NFT</div>
 </div>
 
 <!-- WALLET MODAL -->
@@ -2804,7 +2915,7 @@ function fbLoad(){
    TAB SWITCHING
    ═══════════════════════════════════════════ */
 function switchTab(tab){
-  var tabs = ['mine','rig','quests','pvp'];
+  var tabs = ['mine','rig','quests','pvp','nft'];
   if(tabs.indexOf(tab) === -1) return;
 
   /* RIG opens full-screen page */
@@ -2825,6 +2936,7 @@ function switchTab(tab){
 
   if(tab==='quests') renderQuests();
   if(tab==='pvp'){renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();}
+  if(tab==='nft') refreshNftTab();
 }
 
 /* switchSub removed — replaced by grid */
@@ -3096,6 +3208,457 @@ function renderRigPageSwPanel(){
 }
 
 /* ═══════════════════════════════════════════
+   NFT SYSTEM — MetaMask + On-chain PvP
+   ═══════════════════════════════════════════ */
+var NFT_CONTRACT_ADDR = ''; // Set after deployment
+var BASE_CHAIN_ID = '0x2105'; // 8453
+var BASE_SEPOLIA_CHAIN_ID = '0x14a34'; // 84532
+var ACTIVE_CHAIN_ID = BASE_SEPOLIA_CHAIN_ID; // Switch to BASE_CHAIN_ID for mainnet
+var ACTIVE_RPC = 'https://sepolia.base.org';
+
+var NFT_ABI = [
+  'function mint() external payable',
+  'function tokensOfOwner(address) external view returns (uint256[])',
+  'function getAttributes(uint256) external view returns (tuple(uint8 hashPower,uint8 firewall,uint8 algorithm,uint8 cooling,uint8 luck,uint8 rarity,uint8 losses,uint32 wins,uint32 totalBattles))',
+  'function tokenURI(uint256) external view returns (string)',
+  'function createChallenge(uint256,uint256) external',
+  'function acceptChallenge(uint256) external',
+  'function cancelChallenge(uint256) external',
+  'function getChallenge(uint256) external view returns (tuple(uint256 challengerTokenId,uint256 defenderTokenId,address challenger,uint64 createdAt,bool active))',
+  'function getPoolBalances() external view returns (uint256,uint256)',
+  'function totalSupply() external view returns (uint256)',
+  'function ownerOf(uint256) external view returns (address)',
+  'function activeChallenge(uint256) external view returns (uint256)',
+  'function MINT_PRICE() external view returns (uint256)',
+  'event Minted(uint256 indexed tokenId, address indexed owner, uint8 hashPower, uint8 firewall, uint8 algorithm, uint8 cooling, uint8 luck, uint8 rarity)',
+  'event ChallengeCreated(uint256 indexed challengeId, uint256 indexed challengerToken, uint256 indexed defenderToken, address challenger)',
+  'event BattleResolved(uint256 indexed challengeId, uint256 winnerId, uint256 loserId, uint256 winnerPayout, uint256 loserPayout)',
+  'event AutoBurned(uint256 indexed tokenId, address indexed owner)'
+];
+
+var _mm = { provider: null, signer: null, address: null, contract: null, connected: false };
+var _myNfts = [];
+var _nftChallenges = [];
+var _nftUnsubChallenges = null;
+
+var RARITY_NAMES = ['Common','Rare','Epic','Legendary'];
+var RARITY_CLASSES = ['rarity-common','rarity-rare','rarity-epic','rarity-legendary'];
+var STAT_COLORS = {hashPower:'#ff4444',firewall:'#4488ff',algorithm:'#ff8800',cooling:'#00cc88',luck:'#ffcc00'};
+var STAT_LABELS = {hashPower:'ATK',firewall:'DEF',algorithm:'SPD',cooling:'HP',luck:'LCK'};
+
+async function connectMetaMask(){
+  if(typeof window.ethereum === 'undefined'){
+    nftTxStatus('MetaMask not found. Install MetaMask extension.','error');
+    return;
+  }
+  try{
+    nftTxStatus('Connecting MetaMask...','pending');
+    var accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    if(!accounts||!accounts.length) throw new Error('No accounts');
+
+    /* Switch to Base chain */
+    try{
+      await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:ACTIVE_CHAIN_ID}]});
+    }catch(switchErr){
+      if(switchErr.code===4902){
+        await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
+          chainId:ACTIVE_CHAIN_ID,
+          chainName:ACTIVE_CHAIN_ID===BASE_CHAIN_ID?'Base':'Base Sepolia',
+          rpcUrls:[ACTIVE_RPC],
+          nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18},
+          blockExplorerUrls:[ACTIVE_CHAIN_ID===BASE_CHAIN_ID?'https://basescan.org':'https://sepolia.basescan.org']
+        }]});
+      }else throw switchErr;
+    }
+
+    _mm.provider = new ethers.BrowserProvider(window.ethereum);
+    _mm.signer = await _mm.provider.getSigner();
+    _mm.address = await _mm.signer.getAddress();
+    _mm.connected = true;
+
+    if(NFT_CONTRACT_ADDR){
+      _mm.contract = new ethers.Contract(NFT_CONTRACT_ADDR, NFT_ABI, _mm.signer);
+    }
+
+    document.getElementById('nft-mm-addr').textContent = _mm.address.slice(0,6)+'...'+_mm.address.slice(-4);
+    document.getElementById('nft-mm-addr').style.display='block';
+    document.getElementById('btn-connect-mm').textContent='Connected';
+    document.getElementById('btn-connect-mm').disabled=true;
+    document.getElementById('nft-mint-area').style.display='block';
+
+    nftTxStatus('Connected to '+(_mm.address.slice(0,6)+'...'+_mm.address.slice(-4)),'success');
+
+    /* Register in Firebase for matchmaking */
+    registerNftPlayer();
+    listenNftChallenges();
+    refreshNftTab();
+  }catch(e){
+    nftTxStatus('Connection failed: '+(e.message||e),'error');
+  }
+}
+
+function nftTxStatus(msg,type){
+  var el=document.getElementById('nft-tx-status');
+  if(!el)return;
+  el.textContent=msg;
+  el.className='nft-tx-status show '+type;
+  if(type==='success') setTimeout(function(){el.className='nft-tx-status';},5000);
+}
+
+async function mintNft(){
+  if(!_mm.connected||!_mm.contract){nftTxStatus('Connect MetaMask first','error');return;}
+  try{
+    nftTxStatus('Sending mint transaction...','pending');
+    var tx = await _mm.contract.mint({value:ethers.parseEther('0.0001')});
+    nftTxStatus('TX sent: '+tx.hash.slice(0,10)+'... Waiting for confirmation...','pending');
+    var receipt = await tx.wait();
+    nftTxStatus('Minted successfully! TX: '+receipt.hash.slice(0,10)+'...','success');
+    refreshNftTab();
+  }catch(e){
+    var msg = e.reason||e.message||'Mint failed';
+    if(msg.length>80) msg=msg.slice(0,80)+'...';
+    nftTxStatus(msg,'error');
+  }
+}
+
+async function refreshNftTab(){
+  if(!_mm.connected||!_mm.contract) return;
+  try{
+    var pools = await _mm.contract.getPoolBalances();
+    document.getElementById('nft-winner-pool').textContent = parseFloat(ethers.formatEther(pools[0])).toFixed(6)+' ETH';
+    document.getElementById('nft-loser-pool').textContent = parseFloat(ethers.formatEther(pools[1])).toFixed(6)+' ETH';
+    var supply = await _mm.contract.totalSupply();
+    document.getElementById('nft-supply').textContent = supply.toString();
+  }catch(e){}
+  loadMyNfts();
+}
+
+async function loadMyNfts(){
+  if(!_mm.connected||!_mm.contract) return;
+  try{
+    var tokenIds = await _mm.contract.tokensOfOwner(_mm.address);
+    _myNfts=[];
+    for(var i=0;i<tokenIds.length;i++){
+      var id=tokenIds[i];
+      var attr=await _mm.contract.getAttributes(id);
+      var activeCh=await _mm.contract.activeChallenge(id);
+      _myNfts.push({
+        id:Number(id),
+        hashPower:attr.hashPower,firewall:attr.firewall,algorithm:attr.algorithm,
+        cooling:attr.cooling,luck:attr.luck,rarity:attr.rarity,
+        losses:attr.losses,wins:Number(attr.wins),totalBattles:Number(attr.totalBattles),
+        busy:Number(activeCh)>0
+      });
+    }
+    renderNftGallery();
+  }catch(e){}
+}
+
+function renderNftGallery(){
+  var c=document.getElementById('nft-gallery-list');
+  if(!c)return;
+  if(!_mm.connected){c.innerHTML='<div class="nft-empty">Connect MetaMask to see your NFTs</div>';return;}
+  if(!_myNfts.length){c.innerHTML='<div class="nft-empty">No HashRig NFTs yet. Mint one!</div>';return;}
+  c.innerHTML='';
+  _myNfts.forEach(function(nft){
+    var card=document.createElement('div');
+    card.className='nft-card rarity-'+nft.rarity;
+    var lives=10-nft.losses;
+    card.innerHTML=
+      '<div class="nft-card-head">'+
+        '<span class="nft-card-id">HashRig #'+nft.id+'</span>'+
+        '<span class="nft-rarity-badge '+RARITY_CLASSES[nft.rarity]+'">'+RARITY_NAMES[nft.rarity]+'</span>'+
+      '</div>'+
+      '<div class="nft-stats">'+
+        nftStatBar('ATK',nft.hashPower,STAT_COLORS.hashPower)+
+        nftStatBar('DEF',nft.firewall,STAT_COLORS.firewall)+
+        nftStatBar('SPD',nft.algorithm,STAT_COLORS.algorithm)+
+        nftStatBar('HP',nft.cooling,STAT_COLORS.cooling)+
+        nftStatBar('LCK',nft.luck,STAT_COLORS.luck)+
+      '</div>'+
+      '<div class="nft-card-footer">'+
+        '<span class="nft-lives">Lives: '+lives+'/10</span>'+
+        '<span class="nft-record">'+nft.wins+'W / '+nft.totalBattles+'B</span>'+
+        (nft.busy?'<span style="color:var(--y);font-size:10px">CHALLENGED</span>':
+          '<button class="btn btn-y btn-sm nft-challenge-btn" data-nft-id="'+nft.id+'">Challenge</button>')+
+      '</div>';
+    c.appendChild(card);
+  });
+}
+
+function nftStatBar(label,val,color){
+  return '<div class="nft-stat-row">'+
+    '<span class="nft-stat-label">'+label+'</span>'+
+    '<div class="nft-stat-bar"><div class="nft-stat-fill" style="width:'+val+'%;background:'+color+'"></div></div>'+
+    '<span class="nft-stat-val">'+val+'</span>'+
+  '</div>';
+}
+
+/* ── NFT Sub-tab switching ── */
+function switchNftSub(sub){
+  document.querySelectorAll('.nft-sub-tab').forEach(function(el){el.classList.toggle('active',el.dataset.nsub===sub);});
+  document.querySelectorAll('.nft-sub-content').forEach(function(el){el.classList.toggle('active',el.id==='nsub-'+sub);});
+}
+
+/* ── Challenge flow ── */
+var _challengeSelectToken = null;
+
+function openChallengeSelect(myTokenId){
+  _challengeSelectToken = myTokenId;
+  switchNftSub('arena');
+  loadArenaPlayers();
+}
+
+async function loadArenaPlayers(){
+  var c=document.getElementById('nft-arena-players');
+  if(!c)return;
+  if(!_fbReady||!_mm.connected){c.innerHTML='<div class="nft-empty">Connect MetaMask first</div>';return;}
+  c.innerHTML='<div class="nft-empty">Loading players...</div>';
+  try{
+    var snap=await _fb.db.collection('nft_players').orderBy('updatedAt','desc').limit(20).get();
+    c.innerHTML='';
+    if(snap.empty){c.innerHTML='<div class="nft-empty">No players online yet</div>';return;}
+    snap.forEach(function(doc){
+      var d=doc.data();
+      if(d.address===_mm.address)return; // Skip self
+      if(!d.tokenIds||!d.tokenIds.length)return;
+      d.tokenIds.forEach(function(tid){
+        var card=document.createElement('div');
+        card.className='nft-arena-card';
+        card.innerHTML=
+          '<div class="nft-arena-info">'+
+            '<div class="arena-name">HashRig #'+tid+'</div>'+
+            '<div class="arena-stats">Owner: '+d.address.slice(0,6)+'...'+d.address.slice(-4)+'</div>'+
+          '</div>'+
+          (_challengeSelectToken?
+            '<button class="btn btn-r btn-sm nft-arena-fight" data-target="'+tid+'">Fight</button>':
+            '<span style="font-size:10px;color:var(--muted)">Select your NFT first</span>');
+        c.appendChild(card);
+      });
+    });
+    if(!c.children.length) c.innerHTML='<div class="nft-empty">No opponents found</div>';
+  }catch(e){
+    c.innerHTML='<div class="nft-empty">Failed to load players</div>';
+  }
+}
+
+async function createNftChallenge(defenderTokenId){
+  if(!_challengeSelectToken||!_mm.contract)return;
+  try{
+    nftTxStatus('Creating challenge...','pending');
+    var tx = await _mm.contract.createChallenge(_challengeSelectToken, defenderTokenId);
+    nftTxStatus('Challenge TX sent: '+tx.hash.slice(0,10)+'...','pending');
+    var receipt = await tx.wait();
+
+    /* Save to Firebase for notification */
+    if(_fbReady){
+      var logs = receipt.logs||[];
+      var challengeId = 0;
+      for(var i=0;i<logs.length;i++){
+        try{
+          var parsed = _mm.contract.interface.parseLog({topics:logs[i].topics,data:logs[i].data});
+          if(parsed&&parsed.name==='ChallengeCreated') challengeId=Number(parsed.args[0]);
+        }catch(e2){}
+      }
+      var defOwner='';
+      try{defOwner=await _mm.contract.ownerOf(defenderTokenId);}catch(e3){}
+      await _fb.db.collection('nft_challenges').doc(String(challengeId)).set({
+        challengeId:challengeId,
+        challengerAddress:_mm.address,
+        defenderAddress:defOwner.toLowerCase(),
+        challengerToken:Number(_challengeSelectToken),
+        defenderToken:Number(defenderTokenId),
+        status:'active',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    _challengeSelectToken=null;
+    nftTxStatus('Challenge created! Waiting for opponent...','success');
+    refreshNftTab();
+  }catch(e){
+    nftTxStatus('Challenge failed: '+(e.reason||e.message||e),'error');
+  }
+}
+
+async function acceptNftChallenge(challengeId){
+  if(!_mm.contract)return;
+  try{
+    nftTxStatus('Accepting challenge... Battle resolving on-chain!','pending');
+    var tx = await _mm.contract.acceptChallenge(challengeId);
+    nftTxStatus('Battle TX: '+tx.hash.slice(0,10)+'... Resolving...','pending');
+    var receipt = await tx.wait();
+
+    /* Parse battle result */
+    var winnerId=0,loserId=0,winPay=0,losPay=0;
+    (receipt.logs||[]).forEach(function(log){
+      try{
+        var parsed=_mm.contract.interface.parseLog({topics:log.topics,data:log.data});
+        if(parsed&&parsed.name==='BattleResolved'){
+          winnerId=Number(parsed.args.winnerId);
+          loserId=Number(parsed.args.loserId);
+          winPay=parsed.args.winnerPayout;
+          losPay=parsed.args.loserPayout;
+        }
+      }catch(e2){}
+    });
+
+    /* Update Firebase */
+    if(_fbReady){
+      try{await _fb.db.collection('nft_challenges').doc(String(challengeId)).update({status:'resolved'});}catch(e3){}
+    }
+
+    /* Show result using battle overlay */
+    var isWin = _myNfts.some(function(n){return n.id===winnerId;});
+    showNftBattleResult(winnerId,loserId,isWin,winPay,losPay);
+    refreshNftTab();
+  }catch(e){
+    nftTxStatus('Battle failed: '+(e.reason||e.message||e),'error');
+  }
+}
+
+async function cancelNftChallenge(challengeId){
+  if(!_mm.contract)return;
+  try{
+    nftTxStatus('Cancelling challenge...','pending');
+    var tx=await _mm.contract.cancelChallenge(challengeId);
+    await tx.wait();
+    if(_fbReady){try{await _fb.db.collection('nft_challenges').doc(String(challengeId)).update({status:'cancelled'});}catch(e2){}}
+    nftTxStatus('Challenge cancelled','success');
+    refreshNftTab();
+  }catch(e){
+    nftTxStatus('Cancel failed: '+(e.reason||e.message||e),'error');
+  }
+}
+
+function showNftBattleResult(winnerId,loserId,isWin,winPay,losPay){
+  var overlay=document.getElementById('battle-overlay');
+  if(!overlay)return;
+  var resultEl=document.getElementById('battle-result');
+  var detailEl=document.getElementById('battle-detail');
+  var coinsEl=document.getElementById('battle-coins');
+  var playerRig=document.getElementById('battle-player-rig');
+  var enemyRig=document.getElementById('battle-enemy-rig');
+  var introEl=document.getElementById('battle-intro');
+  var playerHp=document.getElementById('battle-player-hp');
+  var enemyHp=document.getElementById('battle-enemy-hp');
+
+  /* Reset state */
+  overlay.className='battle-overlay';
+  playerRig.className='battle-rig';playerRig.style.opacity='1';
+  enemyRig.className='battle-rig';enemyRig.style.opacity='1';
+  introEl.style.display='none';
+  playerHp.style.width='100%';enemyHp.style.width='100%';
+  resultEl.className='battle-result-text';resultEl.textContent='';
+  detailEl.className='battle-result-detail';detailEl.textContent='';
+  coinsEl.style.display='none';
+
+  document.getElementById('battle-player-icon').textContent='⛏';
+  document.getElementById('battle-player-name').textContent='HashRig #'+(isWin?winnerId:loserId);
+  document.getElementById('battle-player-stat').textContent='Your NFT';
+  document.getElementById('battle-enemy-icon').textContent='⛏';
+  document.getElementById('battle-enemy-name').textContent='HashRig #'+(isWin?loserId:winnerId);
+  document.getElementById('battle-enemy-stat').textContent='Opponent';
+
+  overlay.classList.add('show','fade-in');
+
+  setTimeout(function(){
+    if(isWin){
+      enemyHp.style.width='0%';
+      playerRig.classList.add('battle-rig-glow');
+      enemyRig.classList.add('battle-rig-fade');
+      resultEl.className='battle-result-text win show';
+      resultEl.textContent='VICTORY!';
+      detailEl.className='battle-result-detail show';
+      detailEl.textContent='Won '+parseFloat(ethers.formatEther(winPay)).toFixed(6)+' ETH';
+      coinsEl.style.display='block';coinsEl.style.color='var(--g)';
+      coinsEl.textContent='+'+parseFloat(ethers.formatEther(winPay)).toFixed(6)+' ETH';
+    }else{
+      playerHp.style.width='0%';
+      enemyRig.classList.add('battle-rig-glow');
+      playerRig.classList.add('battle-rig-fade');
+      resultEl.className='battle-result-text lose show';
+      resultEl.textContent='DEFEATED!';
+      detailEl.className='battle-result-detail show';
+      detailEl.textContent='Lost. Consolation: '+parseFloat(ethers.formatEther(losPay)).toFixed(6)+' ETH';
+      coinsEl.style.display='block';coinsEl.style.color='var(--r)';
+      coinsEl.textContent='+'+parseFloat(ethers.formatEther(losPay)).toFixed(6)+' ETH';
+    }
+  },500);
+
+  setTimeout(function(){
+    overlay.classList.add('fade-out');
+    setTimeout(function(){overlay.className='battle-overlay';coinsEl.style.display='none';},500);
+  },5000);
+}
+
+/* ── Firebase: register player for matchmaking ── */
+function registerNftPlayer(){
+  if(!_fbReady||!_mm.connected)return;
+  _fb.db.collection('nft_players').doc(_mm.address.toLowerCase()).set({
+    address:_mm.address.toLowerCase(),
+    tokenIds:_myNfts.map(function(n){return n.id;}),
+    nickname:getNickname()||'Anon',
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true}).catch(function(){});
+}
+
+/* ── Firebase: listen for incoming challenges ── */
+function listenNftChallenges(){
+  if(!_fbReady||!_mm.connected)return;
+  if(_nftUnsubChallenges) _nftUnsubChallenges();
+  _nftUnsubChallenges=_fb.db.collection('nft_challenges')
+    .where('defenderAddress','==',_mm.address.toLowerCase())
+    .where('status','==','active')
+    .onSnapshot(function(snap){
+      _nftChallenges=[];
+      snap.forEach(function(doc){_nftChallenges.push(doc.data());});
+      renderNftChallenges();
+    },function(){});
+}
+
+function renderNftChallenges(){
+  var c=document.getElementById('nft-incoming-challenges');
+  if(!c)return;
+  if(!_nftChallenges.length){c.innerHTML='<div class="nft-empty">No incoming challenges</div>';return;}
+  c.innerHTML='';
+  _nftChallenges.forEach(function(ch){
+    var div=document.createElement('div');
+    div.className='nft-challenge-item';
+    div.innerHTML=
+      '<div class="ch-title">HashRig #'+ch.challengerToken+' challenges your #'+ch.defenderToken+'</div>'+
+      '<div class="ch-info">From: '+ch.challengerAddress.slice(0,6)+'...'+ch.challengerAddress.slice(-4)+'</div>'+
+      '<div style="margin-top:8px;display:flex;gap:6px">'+
+        '<button class="btn btn-g btn-sm nft-accept-ch" data-ch-id="'+ch.challengeId+'">Accept Battle</button>'+
+        '<button class="btn btn-r btn-sm nft-cancel-ch" data-ch-id="'+ch.challengeId+'">Decline</button>'+
+      '</div>';
+    c.appendChild(div);
+  });
+}
+
+/* Load my outgoing active challenges */
+async function loadMyChallenges(){
+  var c=document.getElementById('nft-my-challenges');
+  if(!c||!_fbReady||!_mm.connected){if(c)c.innerHTML='';return;}
+  try{
+    var snap=await _fb.db.collection('nft_challenges')
+      .where('challengerAddress','==',_mm.address.toLowerCase())
+      .where('status','==','active').get();
+    c.innerHTML='';
+    if(snap.empty){c.innerHTML='<div class="nft-empty">No active challenges</div>';return;}
+    snap.forEach(function(doc){
+      var d=doc.data();
+      var div=document.createElement('div');
+      div.className='nft-challenge-item';
+      div.innerHTML=
+        '<div class="ch-title">Your #'+d.challengerToken+' vs #'+d.defenderToken+'</div>'+
+        '<div class="ch-info">Waiting for opponent...</div>'+
+        '<div style="margin-top:8px"><button class="btn btn-r btn-sm nft-cancel-ch" data-ch-id="'+d.challengeId+'">Cancel</button></div>';
+      c.appendChild(div);
+    });
+  }catch(e){c.innerHTML='';}
+}
+
+/* ═══════════════════════════════════════════
    EVENT LISTENERS (no inline onclick)
    ═══════════════════════════════════════════ */
 document.getElementById('btn-wallet').addEventListener('click', openWallet);
@@ -3118,6 +3681,27 @@ document.getElementById('tab-nav').addEventListener('click', function(e){
 document.getElementById('bottom-nav').addEventListener('click', function(e){
   var btn = e.target.closest('.bnav-btn');
   if(btn && btn.dataset.tab) switchTab(btn.dataset.tab);
+});
+
+/* NFT tab event delegation */
+document.getElementById('btn-connect-mm').addEventListener('click', connectMetaMask);
+document.getElementById('btn-mint-nft').addEventListener('click', mintNft);
+document.querySelector('.nft-sub-tabs').addEventListener('click', function(e){
+  var tab=e.target.closest('.nft-sub-tab');
+  if(tab&&tab.dataset.nsub){
+    switchNftSub(tab.dataset.nsub);
+    if(tab.dataset.nsub==='arena'){loadArenaPlayers();loadMyChallenges();}
+  }
+});
+document.getElementById('tab-nft').addEventListener('click', function(e){
+  var chBtn=e.target.closest('.nft-challenge-btn');
+  if(chBtn){openChallengeSelect(Number(chBtn.dataset.nftId));return;}
+  var fightBtn=e.target.closest('.nft-arena-fight');
+  if(fightBtn){createNftChallenge(Number(fightBtn.dataset.target));return;}
+  var acceptBtn=e.target.closest('.nft-accept-ch');
+  if(acceptBtn){acceptNftChallenge(Number(acceptBtn.dataset.chId));return;}
+  var cancelBtn=e.target.closest('.nft-cancel-ch');
+  if(cancelBtn){cancelNftChallenge(Number(cancelBtn.dataset.chId));return;}
 });
 
 /* Grid cell delegation */
@@ -3253,6 +3837,12 @@ async function init(){
 
   await initWallet();
   initFirebase();
+
+  /* MetaMask account/chain change listeners */
+  if(typeof window.ethereum !== 'undefined'){
+    window.ethereum.on('accountsChanged', function(){_mm.connected=false;connectMetaMask();});
+    window.ethereum.on('chainChanged', function(){window.location.reload();});
+  }
 
   if(S.autoMiners > 0) startAutoMine();
 
