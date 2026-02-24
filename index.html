@@ -791,6 +791,26 @@ body::after{
 }
 .prestige-confirm{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#000;font-weight:bold;}
 .prestige-cancel{background:var(--s2);color:var(--muted);border:1px solid var(--border) !important;}
+
+/* ─── Arena Locked ─── */
+.arena-locked{text-align:center;padding:40px 20px;}
+.arena-lock-icon{font-size:48px;margin-bottom:12px;}
+.arena-lock-title{font-size:20px;color:var(--b);margin-bottom:8px;}
+.arena-lock-desc{font-size:13px;color:var(--muted);margin-bottom:12px;}
+.arena-lock-score{font-size:16px;color:var(--y);margin-bottom:4px;}
+
+/* ─── Arena League ─── */
+.arena-league-info{margin-bottom:10px;}
+.arena-section-title{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--b);margin-bottom:8px;}
+.arena-player{cursor:pointer;transition:transform .15s;}
+.arena-player:active{transform:scale(0.97);}
+
+/* ─── Quest Panels ─── */
+.quest-panel-title{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--g);margin-bottom:8px;text-align:center;}
+.quest-pvp-locked{text-align:center;padding:16px;color:var(--muted);font-size:12px;background:var(--s1);border:1px solid var(--border);border-radius:8px;}
+
+/* ─── Enemy Locked ─── */
+.enemy-card.locked{filter:grayscale(0.5);}
 </style>
 </head>
 <body>
@@ -905,7 +925,7 @@ body::after{
     <div class="tab-btn" data-tab="mine">⛏ MINE</div>
     <div class="tab-btn" data-tab="rig">🔧 RIG</div>
     <div class="tab-btn" data-tab="quests">📋 QUESTS</div>
-    <div class="tab-btn" data-tab="pvp">⚔️ PVP</div>
+    <div class="tab-btn" data-tab="battle">⚔️ BATTLE</div>
   </div>
 
   <!-- ═══ MINE TAB ═══ -->
@@ -976,11 +996,11 @@ body::after{
     <div id="quest-list"></div>
   </div>
 
-  <!-- ═══ PVP TAB ═══ -->
-  <div class="tab-content" id="tab-pvp">
+  <!-- ═══ BATTLE TAB (NPC — PvE phase) ═══ -->
+  <div class="tab-content" id="tab-battle">
     <div id="pvp-stats-panel" class="pvp-stats-panel"></div>
     <div class="pvp-rules">
-      ⚔️ <b>PvP Arena</b> — Choose your attack, battle miners, steal their coins.<br>
+      ⚔️ <b>NPC Battle</b> — Choose your attack, battle miners, steal their coins.<br>
       ⚡ Quick Strike: faster cooldown · 💥 Heavy: more damage · 👻 Stealth: bypass defense
     </div>
     <div class="pvp-streak-bar" id="pvp-streak" style="display:none"></div>
@@ -988,6 +1008,11 @@ body::after{
     <div id="enemy-list"></div>
     <div style="font-size:12px;color:var(--muted);margin-top:14px;margin-bottom:6px">📜 Battle Log</div>
     <div id="pvp-log"></div>
+  </div>
+
+  <!-- ═══ ARENA TAB (Real PvP — unlocks at Rig Score C) ═══ -->
+  <div class="tab-content" id="tab-arena">
+    <div id="arena-content"></div>
   </div>
 
   <!-- ═══ NFT TAB ═══ -->
@@ -1042,7 +1067,7 @@ body::after{
   <div class="bnav-btn" data-tab="mine"><span class="bnav-icon">⛏</span>Mine</div>
   <div class="bnav-btn" data-tab="rig"><span class="bnav-icon">🔧</span>Rig</div>
   <div class="bnav-btn" data-tab="quests"><span class="bnav-icon">📋</span>Quests</div>
-  <div class="bnav-btn" data-tab="pvp"><span class="bnav-icon">⚔️</span>PvP</div>
+  <div class="bnav-btn" data-tab="battle"><span class="bnav-icon">⚔️</span>Battle</div>
 </div>
 
 <!-- WALLET MODAL -->
@@ -1190,6 +1215,9 @@ const DEFAULTS = deepFreeze({
   pvpWins:0, pvpLosses:0, lastAttack:0, pvpStreak:0, pvpBestStreak:0, pvpLog:[],
   pvpTotalStolen:0, pvpTotalLost:0, pvpAtkCounts:{quick:0,heavy:0,stealth:0}, pvpKills:{},
   quests:[], questDate:'',
+  leaguePoints:0, league:'bronze', shieldUntil:0,
+  defenseLog:[], arenaOpponents:[], arenaLastRefresh:0,
+  pvpQuests:[], pvpQuestDate:'', revengeUsed:{},
   sellCount:0, repairCount:0,
   dailyEnergyUsed:0, dailyEnergyMax:1000,
   dailyDate:'', dailyRefills:0,
@@ -1254,6 +1282,37 @@ var TIER_COLORS = {
 };
 
 var TIER_REWARD_MULT = {bronze:1, silver:1.2, gold:1.5, diamond:2};
+var TIER_UNLOCK_SCORE = {bronze:0, silver:30, gold:80, diamond:160};
+
+var LEAGUES=[
+  {id:'bronze', min:0,    label:'BRONZE', color:'#cd7f32',icon:'🥉',lootBonus:0,   hrBonus:0},
+  {id:'silver', min:1000, label:'SILVER', color:'#c0c0c0',icon:'🥈',lootBonus:0.10,hrBonus:0},
+  {id:'gold',   min:2500, label:'GOLD',   color:'#ffd700',icon:'🥇',lootBonus:0.20,hrBonus:0.05},
+  {id:'diamond',min:5000, label:'DIAMOND',color:'#b9f2ff',icon:'💎',lootBonus:0.30,hrBonus:0.10},
+  {id:'legend', min:10000,label:'LEGEND', color:'#ff44ff',icon:'👑',lootBonus:0.50,hrBonus:0.15}
+];
+
+function getLeague(pts){
+  var l=LEAGUES[0];
+  for(var i=LEAGUES.length-1;i>=0;i--){if(pts>=LEAGUES[i].min){l=LEAGUES[i];break;}}
+  return l;
+}
+function getLeagueIdx(id){
+  for(var i=0;i<LEAGUES.length;i++){if(LEAGUES[i].id===id)return i;}
+  return 0;
+}
+function updateLeaguePoints(isWin,opponentLeagueId){
+  var myIdx=getLeagueIdx(S.league);
+  var oppIdx=getLeagueIdx(opponentLeagueId||'bronze');
+  if(isWin){
+    var gain=25+Math.max(0,(oppIdx-myIdx)*5);
+    S.leaguePoints+=gain;
+  }else{
+    var loss=15+Math.max(0,(myIdx-oppIdx)*3);
+    S.leaguePoints=Math.max(0,S.leaguePoints-loss);
+  }
+  S.league=getLeague(S.leaguePoints).id;
+}
 
 const QUEST_TPL = deepFreeze([
   /* MINING (6) */
@@ -1308,6 +1367,23 @@ const QUEST_TPL = deepFreeze([
   {id:'no_repair',     name:'Iron Rig',       desc:'Mine {n} HC without repair',targets:[500,1500,4000], rewardMult:0.4}
 ]);
 
+var PVE_QUEST_IDS=['mine','mine_btc','mine_eth','mine_sol','automine','daily_active',
+  'click','session_taps','block','block_btc','block_eth','block_sol',
+  'sell','earn_total','spend','balance','sell_profit',
+  'recharge','cooldown','repair','overheat','energy_save',
+  'upgrade','unlock_slot','reach_hr','reach_def','max_upgrade',
+  'mine_and_sell','allrounder','no_repair',
+  'pvpwin','pvp_quick','pvp_heavy','pvp_stealth','pvp_bronze','pvp_silver','pvp_gold','pvp_diamond',
+  'pvp_streak','pvp_crit','pvp_steal','pvp_fight'];
+
+var ARENA_QUEST_TPL=deepFreeze([
+  {id:'arena_win',    name:'Arena Victor',    desc:'Win {n} arena battles',      targets:[1,2,3,5],   rewardMult:100},
+  {id:'arena_streak', name:'Arena Streak',    desc:'Reach {n} arena win streak', targets:[3,5,8],     rewardMult:180, mode:'hwm'},
+  {id:'arena_revenge',name:'Payback',         desc:'Win {n} revenge battles',    targets:[1,2],       rewardMult:150},
+  {id:'arena_steal',  name:'Arena Raider',    desc:'Steal {n} HC in arena',      targets:[1000,5000,20000], rewardMult:0.3},
+  {id:'arena_defend', name:'Iron Wall',       desc:'Survive {n} defense attacks',targets:[1,3,5],     rewardMult:120}
+]);
+
 /* Whitelisted state keys for safe loading */
 const STATE_KEYS = [
   'coins','total','hashRate','best',
@@ -1315,6 +1391,9 @@ const STATE_KEYS = [
   'blockProg','blockTarget','blocksFound','clicks','autoMiners',
   'coin','defenseRating','pvpWins','pvpLosses','lastAttack','pvpStreak','pvpBestStreak','pvpLog',
   'pvpTotalStolen','pvpTotalLost','pvpAtkCounts','pvpKills',
+  'leaguePoints','league','shieldUntil',
+  'defenseLog','arenaOpponents','arenaLastRefresh',
+  'pvpQuests','pvpQuestDate','revengeUsed',
   'quests','questDate','sellCount','repairCount',
   'dailyEnergyUsed','dailyEnergyMax','dailyDate','dailyRefills',
   'sessionMineStart','overheated','overheatEnd','gridUnlocked',
@@ -1519,7 +1598,7 @@ var RIG_WEIGHTS={gpu1:1,gpu2:3,asic:6,rack:12,quantum:25,algo:2,pool:2,oc:4,cach
 var RIG_GRADES=[
   {min:0,grade:'F',color:'#666'},{min:30,grade:'D',color:'#c8c8c8'},
   {min:80,grade:'C',color:'#4ecdc4'},{min:160,grade:'B',color:'#3b82f6'},
-  {min:280,grade:'A',color:'#a855f7'},{min:400,grade:'S',color:'#fbbf24'}
+  {min:220,grade:'A',color:'#a855f7'},{min:240,grade:'S',color:'#fbbf24'}
 ];
 var RIG_CATEGORIES=[
   {key:'hw',label:'HARDWARE',color:'var(--g)',ids:['gpu1','gpu2','asic','rack','quantum']},
@@ -1655,13 +1734,15 @@ function showAttackSelector(enemyIdx){
   document.getElementById('atk-select-overlay').classList.add('show');
 }
 
-function startBattle(enemyIdx,atkType){
+/* ═══ Generic Battle Engine ═══
+   enemy: {icon, name, hr, def, coins, tier}
+   atkType: ATTACK_TYPES element
+   onComplete(isWin, isCrit, stolen/lost, enemy, atkType) — called at result phase */
+function startBattleGeneric(enemy,atkType,onComplete){
   if(battleInProgress)return;
-  if(enemyIdx<0||enemyIdx>=ENEMIES.length)return;
   atkType=atkType||ATTACK_TYPES[0];
-
   battleInProgress=true;
-  var enemy=ENEMIES[enemyIdx];
+
   var effectiveDef=enemy.def*(1-(atkType.defBypass||0));
   var winChance=S.hashRate/(S.hashRate+effectiveDef);
   winChance=Math.max(0.15,Math.min(0.85,winChance+atkType.winMod));
@@ -1670,9 +1751,8 @@ function startBattle(enemyIdx,atkType){
   S.lastAttack=Date.now();
   lastCooldownMs=atkType.cooldownMs||60000;
 
-  /* Cache DOM refs */
   var overlay=document.getElementById('battle-overlay');
-  var arena=document.getElementById('battle-arena');
+  var arenaEl=document.getElementById('battle-arena');
   var introEl=document.getElementById('battle-intro');
   var vsEl=document.getElementById('battle-vs');
   var playerRig=document.getElementById('battle-player-rig');
@@ -1686,7 +1766,6 @@ function startBattle(enemyIdx,atkType){
   var pCharge=document.getElementById('battle-player-charge');
   var eCharge=document.getElementById('battle-enemy-charge');
 
-  /* Reset */
   overlay.className='battle-overlay';
   playerRig.className='battle-rig';playerRig.style.opacity='0';
   enemyRig.className='battle-rig';enemyRig.style.opacity='0';
@@ -1698,7 +1777,6 @@ function startBattle(enemyIdx,atkType){
   coinsEl.style.display='none';coinsEl.textContent='';coinsEl.style.color='';
   pCharge.style.width='0';eCharge.style.width='0';
 
-  /* Set info */
   document.getElementById('battle-player-icon').textContent='⛏';
   document.getElementById('battle-player-name').textContent=getNickname()||'You';
   document.getElementById('battle-player-stat').textContent='Power: '+fmt(S.hashRate);
@@ -1708,155 +1786,485 @@ function startBattle(enemyIdx,atkType){
 
   overlay.classList.add('show','fade-in');
 
-  /* === PHASE 0: INTRO (0-1.2s) === */
   setTimeout(function(){introEl.style.display='block';},200);
-  setTimeout(function(){
-    playerRig.style.opacity='1';
-    playerRig.classList.add('battle-rig-enter-left');
-  },500);
-  setTimeout(function(){
-    enemyRig.style.opacity='1';
-    enemyRig.classList.add('battle-rig-enter-right');
-    vsEl.style.opacity='1';
-  },700);
+  setTimeout(function(){playerRig.style.opacity='1';playerRig.classList.add('battle-rig-enter-left');},500);
+  setTimeout(function(){enemyRig.style.opacity='1';enemyRig.classList.add('battle-rig-enter-right');vsEl.style.opacity='1';},700);
 
-  /* === PHASE 1: CHARGE (1.2-2.7s) === */
   setTimeout(function(){
     introEl.style.display='none';
-    playerRig.classList.add('battle-rig-charge');
-    enemyRig.classList.add('battle-rig-charge');
+    playerRig.classList.add('battle-rig-charge');enemyRig.classList.add('battle-rig-charge');
     pCharge.style.width='100%';eCharge.style.width='100%';
     if(navigator.vibrate)navigator.vibrate(100);
   },1200);
 
-  /* === PHASE 2: CLASH 1 — player fires (2.7s) === */
   setTimeout(function(){
-    playerRig.classList.remove('battle-rig-charge');
-    enemyRig.classList.remove('battle-rig-charge');
+    playerRig.classList.remove('battle-rig-charge');enemyRig.classList.remove('battle-rig-charge');
     beamWrap.style.display='block';
-    var beam1=document.createElement('div');
-    beam1.className='battle-beam green fire';
-    beamWrap.appendChild(beam1);
-    arena.classList.add('battle-shake');
-    if(navigator.vibrate)navigator.vibrate([50,30,50]);
-    setTimeout(function(){arena.classList.remove('battle-shake');},300);
+    var b1=document.createElement('div');b1.className='battle-beam green fire';beamWrap.appendChild(b1);
+    arenaEl.classList.add('battle-shake');if(navigator.vibrate)navigator.vibrate([50,30,50]);
+    setTimeout(function(){arenaEl.classList.remove('battle-shake');},300);
     enemyHp.style.width=isWin?'55%':'75%';
-    enemyRig.classList.add('battle-rig-hit');
-    setTimeout(function(){enemyRig.classList.remove('battle-rig-hit');},300);
+    enemyRig.classList.add('battle-rig-hit');setTimeout(function(){enemyRig.classList.remove('battle-rig-hit');},300);
   },2700);
 
-  /* === PHASE 3: CLASH 2 — enemy retaliates (3.7s) === */
   setTimeout(function(){
     beamWrap.textContent='';
-    var beam2=document.createElement('div');
-    beam2.className='battle-beam red fire-reverse';
-    beamWrap.appendChild(beam2);
-    arena.classList.add('battle-shake');
-    if(navigator.vibrate)navigator.vibrate([50,30,50]);
-    setTimeout(function(){arena.classList.remove('battle-shake');},300);
+    var b2=document.createElement('div');b2.className='battle-beam red fire-reverse';beamWrap.appendChild(b2);
+    arenaEl.classList.add('battle-shake');if(navigator.vibrate)navigator.vibrate([50,30,50]);
+    setTimeout(function(){arenaEl.classList.remove('battle-shake');},300);
     playerHp.style.width=isWin?'70%':'50%';
-    playerRig.classList.add('battle-rig-hit');
-    setTimeout(function(){playerRig.classList.remove('battle-rig-hit');},300);
+    playerRig.classList.add('battle-rig-hit');setTimeout(function(){playerRig.classList.remove('battle-rig-hit');},300);
   },3700);
 
-  /* === PHASE 4: FINAL HIT (4.7s) === */
   setTimeout(function(){
     beamWrap.textContent='';
-    var beamFinal=document.createElement('div');
-    var cls='battle-beam '+(isWin?'green':'red')+' fire';
-    if(isCrit)cls+=' crit';
-    beamFinal.className=cls;
-    beamWrap.appendChild(beamFinal);
-    overlay.classList.add('battle-flash');
-    arena.classList.add('battle-shake-heavy');
+    var bf=document.createElement('div');
+    var cls='battle-beam '+(isWin?'green':'red')+' fire';if(isCrit)cls+=' crit';
+    bf.className=cls;beamWrap.appendChild(bf);
+    overlay.classList.add('battle-flash');arenaEl.classList.add('battle-shake-heavy');
     if(navigator.vibrate)navigator.vibrate([80,40,80,40,120]);
-    setTimeout(function(){
-      arena.classList.remove('battle-shake-heavy');
-      overlay.classList.remove('battle-flash');
-    },400);
-    if(isWin){
-      enemyHp.style.width='0%';
-      enemyRig.classList.add('battle-rig-hit');
-    }else{
-      playerHp.style.width='0%';
-      playerRig.classList.add('battle-rig-hit');
-    }
+    setTimeout(function(){arenaEl.classList.remove('battle-shake-heavy');overlay.classList.remove('battle-flash');},400);
+    if(isWin){enemyHp.style.width='0%';enemyRig.classList.add('battle-rig-hit');}
+    else{playerHp.style.width='0%';playerRig.classList.add('battle-rig-hit');}
   },4700);
 
-  /* === PHASE 5: RESULT (6.0s) === */
+  /* RESULT */
   setTimeout(function(){
+    var stolen=0,lost=0;
     if(isWin){
       var baseSteal=enemy.coins*0.1;
       var tierMult=TIER_REWARD_MULT[enemy.tier||'bronze']||1;
       var critMult=isCrit?1.5:1.0;
-      S.pvpStreak++;
-      if(S.pvpStreak>S.pvpBestStreak)S.pvpBestStreak=S.pvpStreak;
+      S.pvpStreak++;if(S.pvpStreak>S.pvpBestStreak)S.pvpBestStreak=S.pvpStreak;
       var streakBonus=1+Math.min(S.pvpStreak*0.05,0.5);
-      var stolen=Math.floor(baseSteal*tierMult*critMult*streakBonus*atkType.dmgMod);
-      S.coins+=stolen;S.total+=stolen;S.pvpWins++;
-      S.pvpTotalStolen+=stolen;
+      stolen=Math.floor(baseSteal*tierMult*critMult*streakBonus*atkType.dmgMod);
+      S.coins+=stolen;S.total+=stolen;S.pvpWins++;S.pvpTotalStolen+=stolen;
       S.pvpAtkCounts[atkType.id]=(S.pvpAtkCounts[atkType.id]||0)+1;
-      if(!S.pvpKills[enemy.name])S.pvpKills[enemy.name]=0;
-      S.pvpKills[enemy.name]++;
-      checkQuest('pvpwin',1);
-      checkQuest('pvp_'+atkType.id,1);
-      checkQuest('pvp_'+(enemy.tier||'bronze'),1);
-      if(isCrit) checkQuest('pvp_crit',1);
-      checkQuest('pvp_steal',stolen);
-      checkQuest('pvp_fight',1);
-      checkQuest('pvp_streak',S.pvpStreak);
-      checkQuest('allrounder',1);
-      playerRig.classList.add('battle-rig-glow');
-      enemyRig.classList.add('battle-rig-fade');
+
+      playerRig.classList.add('battle-rig-glow');enemyRig.classList.add('battle-rig-fade');
       resultEl.className='battle-result-text win show';
       resultEl.textContent=isCrit?'CRITICAL VICTORY!':'VICTORY!';
       detailEl.className='battle-result-detail show';
-      detailEl.textContent='Stole from '+enemy.name+(S.pvpStreak>1?' ('+S.pvpStreak+'x streak!)':'');
-
-      /* Animated coin counter */
-      coinsEl.style.display='block';coinsEl.style.color='var(--y)';
-      coinsEl.classList.add('counting');
+      detailEl.textContent='Stole from '+esc(enemy.name)+(S.pvpStreak>1?' ('+S.pvpStreak+'x streak!)':'');
+      coinsEl.style.display='block';coinsEl.style.color='var(--y)';coinsEl.classList.add('counting');
       var cv=0;var cs=Math.max(1,Math.floor(stolen/20));
-      var ci=setInterval(function(){
-        cv=Math.min(cv+cs,stolen);
-        coinsEl.textContent='+'+fmt(cv)+' HC';
-        if(cv>=stolen){clearInterval(ci);coinsEl.classList.remove('counting');}
-      },50);
-
-      S.pvpLog.unshift({enemy:enemy.name,win:true,crit:isCrit,amount:stolen,atk:atkType.id,time:Date.now()});
+      var ci=setInterval(function(){cv=Math.min(cv+cs,stolen);coinsEl.textContent='+'+fmt(cv)+' HC';if(cv>=stolen){clearInterval(ci);coinsEl.classList.remove('counting');}},50);
     }else{
-      var vaultProt=S.upg.vault.l*0.2;
-      var vulnerable=S.coins*(1-vaultProt);
-      var lost=Math.floor(vulnerable*0.05);
-      S.coins=Math.max(0,S.coins-lost);S.pvpLosses++;
-      S.pvpTotalLost+=lost;
+      var vaultProt=S.upg.vault.l*0.2;var vulnerable=S.coins*(1-vaultProt);
+      lost=Math.floor(vulnerable*0.05);
+      S.coins=Math.max(0,S.coins-lost);S.pvpLosses++;S.pvpTotalLost+=lost;
       S.pvpAtkCounts[atkType.id]=(S.pvpAtkCounts[atkType.id]||0)+1;
-      checkQuest('pvp_fight',1);
       S.pvpStreak=0;
-      enemyRig.classList.add('battle-rig-glow');
-      playerRig.classList.add('battle-rig-fade');
-      resultEl.className='battle-result-text lose show';
-      resultEl.textContent='DEFEATED!';
+      enemyRig.classList.add('battle-rig-glow');playerRig.classList.add('battle-rig-fade');
+      resultEl.className='battle-result-text lose show';resultEl.textContent='DEFEATED!';
       detailEl.className='battle-result-detail show';
-      detailEl.textContent='-'+fmt(lost)+' HC lost to '+enemy.name;
-      coinsEl.style.display='block';coinsEl.style.color='var(--r)';
-      coinsEl.textContent='-'+fmt(lost)+' HC';
-
-      S.pvpLog.unshift({enemy:enemy.name,win:false,crit:false,amount:lost,atk:atkType.id,time:Date.now()});
+      detailEl.textContent='-'+fmt(lost)+' HC lost to '+esc(enemy.name);
+      coinsEl.style.display='block';coinsEl.style.color='var(--r)';coinsEl.textContent='-'+fmt(lost)+' HC';
     }
-    if(S.pvpLog.length>10)S.pvpLog.pop();
-    updateUI();renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();
+    if(onComplete) onComplete(isWin,isCrit,isWin?stolen:lost,enemy,atkType);
+    updateUI();
   },6000);
 
-  /* === PHASE 6: CLOSE (8.0s) === */
   setTimeout(function(){
     overlay.classList.add('fade-out');
-    setTimeout(function(){
-      overlay.className='battle-overlay';
-      coinsEl.style.display='none';coinsEl.style.color='';
-      battleInProgress=false;
-    },500);
+    setTimeout(function(){overlay.className='battle-overlay';coinsEl.style.display='none';coinsEl.style.color='';battleInProgress=false;},500);
   },8000);
+}
+
+/* NPC Battle — thin wrapper */
+function startBattle(enemyIdx,atkType){
+  if(enemyIdx<0||enemyIdx>=ENEMIES.length)return;
+  var enemy=ENEMIES[enemyIdx];
+  startBattleGeneric(enemy,atkType,function(isWin,isCrit,amount){
+    if(!S.pvpKills[enemy.name])S.pvpKills[enemy.name]=0;
+    if(isWin){
+      S.pvpKills[enemy.name]++;
+      checkQuest('pvpwin',1);checkQuest('pvp_'+atkType.id,1);
+      checkQuest('pvp_'+(enemy.tier||'bronze'),1);
+      if(isCrit)checkQuest('pvp_crit',1);
+      checkQuest('pvp_steal',amount);checkQuest('pvp_fight',1);
+      checkQuest('pvp_streak',S.pvpStreak);checkQuest('allrounder',1);
+      S.pvpLog.unshift({enemy:enemy.name,win:true,crit:isCrit,amount:amount,atk:atkType.id,time:Date.now()});
+    }else{
+      checkQuest('pvp_fight',1);
+      S.pvpLog.unshift({enemy:enemy.name,win:false,crit:false,amount:amount,atk:atkType.id,time:Date.now()});
+    }
+    if(S.pvpLog.length>10)S.pvpLog.pop();
+    renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();
+  });
+}
+
+/* ═══════════════════════════════════════════
+   ARENA SYSTEM (Real PvP)
+   ═══════════════════════════════════════════ */
+function renderArena(){
+  var el=document.getElementById('arena-content');
+  if(!el)return;
+  el.textContent='';
+  if(!isPvpUnlocked()){renderArenaLocked(el);return;}
+  renderLeagueInfo(el);
+  renderShieldStatus(el);
+  renderArenaControls(el);
+  renderArenaPlayers(el);
+  renderDefenseLog(el);
+}
+
+function renderArenaLocked(container){
+  var score=calcRigScore();
+  var pct=Math.min(100,Math.round(score.score/80*100));
+  var wrap=document.createElement('div');wrap.className='arena-locked';
+  wrap.innerHTML='<div class="arena-lock-icon">🔒</div>'
+    +'<div class="arena-lock-title font-title">ARENA LOCKED</div>'
+    +'<div class="arena-lock-desc">Reach Rig Score C (80 pts) to unlock PvP Arena</div>'
+    +'<div class="arena-lock-score">Current: '+score.score+' / 80</div>'
+    +'<div class="bar-wrap bar-b" style="height:12px;margin-top:10px"><div class="bar-fill" style="width:'+pct+'%"></div></div>';
+  container.appendChild(wrap);
+}
+
+function renderLeagueInfo(container){
+  var league=getLeague(S.leaguePoints);
+  var nextIdx=getLeagueIdx(league.id)+1;
+  var next=nextIdx<LEAGUES.length?LEAGUES[nextIdx]:null;
+  var pct=next?Math.min(100,Math.round((S.leaguePoints-league.min)/(next.min-league.min)*100)):100;
+
+  var div=document.createElement('div');div.className='arena-league-info card';
+  var h='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+    +'<span style="font-size:24px">'+league.icon+'</span>'
+    +'<span class="font-title" style="font-size:16px;color:'+league.color+'">'+league.label+' LEAGUE</span>'
+    +'<span style="margin-left:auto;font-size:14px;color:var(--y)">'+S.leaguePoints+' LP</span></div>';
+  if(next){
+    h+='<div style="font-size:11px;color:var(--muted);margin-bottom:4px">Next: '+next.icon+' '+next.label+' ('+next.min+' LP)</div>'
+      +'<div class="bar-wrap bar-y" style="height:8px"><div class="bar-fill" style="width:'+pct+'%"></div></div>';
+  }else{
+    h+='<div style="font-size:11px;color:'+league.color+'">MAX LEAGUE REACHED!</div>';
+  }
+  div.innerHTML=h;
+  container.appendChild(div);
+}
+
+function renderShieldStatus(container){
+  if(!S.shieldUntil||Date.now()>=S.shieldUntil)return;
+  var rem=Math.ceil((S.shieldUntil-Date.now())/1000);
+  var m=Math.floor(rem/60);var s=rem%60;
+  var div=document.createElement('div');div.className='card';
+  div.style.cssText='border-color:var(--b);text-align:center;';
+  div.innerHTML='🛡️ <span style="color:var(--b)">SHIELD ACTIVE</span> — '+m+'m '+s+'s remaining<br>'
+    +'<span style="font-size:11px;color:var(--muted)">You cannot attack or be attacked</span>';
+  container.appendChild(div);
+}
+
+function renderArenaControls(container){
+  var div=document.createElement('div');
+  div.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
+  var title=document.createElement('div');title.className='arena-section-title';
+  title.textContent='⚔️ Arena Opponents';
+  var btn=document.createElement('button');btn.className='btn btn-b btn-sm';btn.id='btn-refresh-arena';
+  btn.textContent='🔄 REFRESH';
+  div.appendChild(title);div.appendChild(btn);
+  container.appendChild(div);
+
+  /* Cooldown display */
+  var cdDiv=document.createElement('div');cdDiv.className='pvp-cooldown';cdDiv.id='arena-cooldown';
+  container.appendChild(cdDiv);
+}
+
+function renderArenaPlayers(container){
+  var list=document.createElement('div');list.id='arena-player-list';
+  if(!S.arenaOpponents||S.arenaOpponents.length===0){
+    list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted)">No opponents found. Hit REFRESH to find players.</div>';
+    container.appendChild(list);return;
+  }
+
+  var shielded=S.shieldUntil&&Date.now()<S.shieldUntil;
+  var cdActive=Date.now()-S.lastAttack<lastCooldownMs;
+
+  S.arenaOpponents.forEach(function(opp,i){
+    var oppLeague=getLeague(opp.leaguePoints||0);
+    var winPct=S.hashRate/(S.hashRate+(opp.defenseRating||10));
+    winPct=Math.max(0.2,Math.min(0.8,winPct));
+    var pctNum=Math.round(winPct*100);
+    var color=pctNum>=60?'var(--g)':pctNum>=40?'var(--y)':'var(--r)';
+
+    var card=document.createElement('div');card.className='enemy-card arena-player';
+    card.setAttribute('data-arena-idx',String(i));
+    card.style.borderLeft='3px solid '+oppLeague.color;
+    if(cdActive||shielded){card.style.opacity='0.5';card.style.pointerEvents='none';}
+
+    var iconDiv=document.createElement('div');iconDiv.className='enemy-icon';
+    iconDiv.textContent=oppLeague.icon;
+    var infoDiv=document.createElement('div');infoDiv.className='enemy-info';
+    var nameDiv=document.createElement('div');nameDiv.className='enemy-name';
+    nameDiv.textContent=opp.nickname||'Unknown';
+    var statsDiv=document.createElement('div');statsDiv.className='enemy-stats';
+    statsDiv.textContent=fmt(opp.hashRate||1)+' H/s · '+(opp.defenseRating||10)+' DEF · '+oppLeague.label;
+    infoDiv.appendChild(nameDiv);infoDiv.appendChild(statsDiv);
+
+    var winDiv=document.createElement('div');winDiv.className='enemy-win';
+    winDiv.style.color=color;winDiv.textContent=pctNum+'%';
+
+    var badge=document.createElement('div');badge.className='tier-badge';
+    badge.style.color=oppLeague.color;badge.textContent=oppLeague.label;
+
+    card.appendChild(iconDiv);card.appendChild(infoDiv);card.appendChild(winDiv);card.appendChild(badge);
+    list.appendChild(card);
+  });
+  container.appendChild(list);
+}
+
+function renderDefenseLog(container){
+  if(!S.defenseLog||S.defenseLog.length===0)return;
+  var title=document.createElement('div');title.className='arena-section-title';
+  title.style.marginTop='16px';title.textContent='🛡️ Defense Log';
+  container.appendChild(title);
+
+  var logDiv=document.createElement('div');logDiv.id='defense-log-list';
+  S.defenseLog.forEach(function(log){
+    var div=document.createElement('div');div.className='pvp-log-entry';
+    var left=document.createElement('span');
+    left.textContent=(log.attackerWon?'💀 Raided by ':'🛡️ Defended vs ')+esc(log.attackerName||'Unknown');
+    left.style.color=log.attackerWon?'var(--r)':'var(--g)';
+    var right=document.createElement('span');
+    if(log.attackerWon){
+      right.textContent='-'+fmt(log.amount||0)+' HC';right.style.color='var(--r)';
+    }else{
+      right.textContent='Blocked!';right.style.color='var(--g)';
+    }
+    div.appendChild(left);div.appendChild(right);
+
+    /* Revenge button */
+    if(log.attackerWon&&!S.revengeUsed[log.id]){
+      var revBtn=document.createElement('button');revBtn.className='btn btn-r btn-sm';
+      revBtn.style.cssText='margin-left:8px;font-size:10px;';
+      revBtn.textContent='REVENGE';revBtn.setAttribute('data-revenge-id',log.id);
+      revBtn.setAttribute('data-revenge-wallet',log.attacker);
+      div.appendChild(revBtn);
+    }
+    logDiv.appendChild(div);
+  });
+  container.appendChild(logDiv);
+}
+
+/* Attack selector for arena opponents */
+function showAttackSelectorArena(idx){
+  if(battleInProgress)return;
+  if(S.shieldUntil&&Date.now()<S.shieldUntil){showToast('🛡️ Shield active — you cannot attack');return;}
+  var now=Date.now();
+  if(now-S.lastAttack<lastCooldownMs){
+    var rem=Math.ceil((lastCooldownMs-(now-S.lastAttack))/1000);
+    showToast('⏳ Cooldown: '+rem+'s');return;
+  }
+  if(!S.arenaOpponents||idx<0||idx>=S.arenaOpponents.length)return;
+  var opp=S.arenaOpponents[idx];
+
+  pendingEnemyIdx=-1;
+  document.getElementById('atk-select-enemy').textContent=getLeague(opp.leaguePoints||0).icon+' '+esc(opp.nickname||'Unknown')+' ('+(opp.defenseRating||10)+' DEF)';
+  var opts=document.getElementById('atk-select-options');opts.textContent='';
+  ATTACK_TYPES.forEach(function(atk){
+    var opt=document.createElement('div');opt.className='atk-option';
+    opt.setAttribute('data-atk',atk.id);opt.setAttribute('data-arena-battle',String(idx));
+    var ic=document.createElement('div');ic.className='atk-option-icon';ic.textContent=atk.icon;
+    var info=document.createElement('div');info.className='atk-option-info';
+    var nm=document.createElement('div');nm.className='atk-option-name';nm.textContent=atk.name;
+    var ds=document.createElement('div');ds.className='atk-option-desc';ds.textContent=atk.desc;
+    info.appendChild(nm);info.appendChild(ds);
+    opt.appendChild(ic);opt.appendChild(info);opts.appendChild(opt);
+  });
+  document.getElementById('atk-select-overlay').classList.add('show');
+}
+
+/* Arena battle — wrapper around generic */
+function startArenaBattle(opponentIdx,atkType){
+  if(!S.arenaOpponents||opponentIdx<0||opponentIdx>=S.arenaOpponents.length)return;
+  if(S.shieldUntil&&Date.now()<S.shieldUntil){showToast('🛡️ Shield active');return;}
+
+  var opp=S.arenaOpponents[opponentIdx];
+  var enemy={
+    icon:getLeague(opp.leaguePoints||0).icon,
+    name:opp.nickname||'Unknown',
+    hr:opp.hashRate||1,
+    def:opp.defenseRating||10,
+    coins:opp.coins||1000,
+    tier:opp.league||'bronze'
+  };
+
+  startBattleGeneric(enemy,atkType,function(isWin,isCrit,amount){
+    /* League points */
+    updateLeaguePoints(isWin,opp.league||'bronze');
+    calcHashRate();
+
+    /* Log to Firestore */
+    if(_fbReady&&_fb&&_wallet){
+      _fb.db.collection('battles').add({
+        attacker:_wallet.address.toLowerCase(),
+        attackerName:getNickname()||'Unknown',
+        defender:opp.walletAddress||'',
+        defenderName:opp.nickname||'Unknown',
+        attackerWon:isWin,
+        amount:amount,
+        timestamp:firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(function(){});
+    }
+
+    /* Arena quest tracking */
+    if(isWin){
+      checkQuest('arena_win',1);checkQuest('arena_streak',S.pvpStreak);
+      checkQuest('arena_steal',amount);
+      S.pvpLog.unshift({enemy:enemy.name,win:true,crit:isCrit,amount:amount,atk:atkType.id,time:Date.now()});
+    }else{
+      checkShieldTrigger();
+      S.pvpLog.unshift({enemy:enemy.name,win:false,crit:false,amount:amount,atk:atkType.id,time:Date.now()});
+    }
+    if(S.pvpLog.length>10)S.pvpLog.pop();
+    renderArena();
+    _fbLastSync=0;fbSave();
+  });
+}
+
+/* Matchmaking — load opponents from Firestore */
+function refreshArenaOpponents(){
+  if(!_fbReady||!_fb)return;
+  var now=Date.now();
+  if(now-S.arenaLastRefresh<300000&&S.arenaOpponents.length>0){
+    showToast('⏳ Refresh available in '+Math.ceil((300000-(now-S.arenaLastRefresh))/1000)+'s');return;
+  }
+  var myId=fbDocId();if(!myId)return;
+  var myLP=S.leaguePoints;
+  var myLeagueIdx=getLeagueIdx(S.league);
+  var minLP=myLeagueIdx>0?LEAGUES[Math.max(0,myLeagueIdx-1)].min:0;
+  var maxLP=myLeagueIdx<LEAGUES.length-1?LEAGUES[Math.min(LEAGUES.length-1,myLeagueIdx+1)].min+2000:999999;
+
+  _fb.db.collection('players')
+    .where('leaguePoints','>=',minLP)
+    .where('leaguePoints','<=',maxLP)
+    .orderBy('leaguePoints')
+    .limit(30)
+    .get().then(function(snap){
+      var opponents=[];
+      snap.forEach(function(doc){
+        if(doc.id===myId)return;
+        var d=doc.data();
+        if(d.shieldUntil&&d.shieldUntil>Date.now())return;
+        opponents.push({
+          walletAddress:doc.id,
+          nickname:d.nickname||'Unknown',
+          hashRate:d.hashRate||1,
+          defenseRating:d.defenseRating||10,
+          coins:d.coins||0,
+          leaguePoints:d.leaguePoints||0,
+          league:d.league||'bronze'
+        });
+      });
+      /* Shuffle and limit */
+      opponents.sort(function(){return Math.random()-0.5;});
+      S.arenaOpponents=opponents.slice(0,10);
+      S.arenaLastRefresh=Date.now();
+      renderArena();
+      showToast('⚔️ Found '+S.arenaOpponents.length+' opponents');
+    }).catch(function(e){
+      showToast('Failed to load opponents');
+    });
+}
+
+/* Defense log — load from Firestore on app start */
+function loadDefenseLog(){
+  if(!_fbReady||!_fb||!_wallet)return;
+  var myId=_wallet.address.toLowerCase();
+  _fb.db.collection('battles')
+    .where('defender','==',myId)
+    .orderBy('timestamp','desc')
+    .limit(20)
+    .get().then(function(snap){
+      var logs=[];
+      snap.forEach(function(doc){
+        var d=doc.data();
+        logs.push({
+          id:doc.id,
+          attacker:d.attacker||'',
+          attackerName:d.attackerName||'Unknown',
+          attackerWon:d.attackerWon===true,
+          amount:d.amount||0,
+          timestamp:d.timestamp?d.timestamp.toMillis():0
+        });
+      });
+      S.defenseLog=logs;
+      /* Apply unprocessed losses (those not yet seen) */
+      var lastSeen=parseInt(localStorage.getItem('hashrig_last_defense_seen')||'0',10);
+      var totalLoss=0;
+      logs.forEach(function(l){
+        if(l.timestamp>lastSeen&&l.attackerWon) totalLoss+=l.amount;
+      });
+      if(totalLoss>0){
+        S.coins=Math.max(0,S.coins-totalLoss);
+        showToast('💀 You were raided while offline! -'+fmt(totalLoss)+' HC');
+        checkQuest('arena_defend',logs.filter(function(l){return l.timestamp>lastSeen&&!l.attackerWon;}).length);
+      }
+      localStorage.setItem('hashrig_last_defense_seen',String(Date.now()));
+      updateUI();
+    }).catch(function(){});
+}
+
+/* Revenge — attack someone who raided you */
+function startRevenge(battleId,attackerWallet){
+  if(!_fbReady||!_fb)return;
+  if(S.revengeUsed[battleId]){showToast('Already used revenge on this battle');return;}
+  S.revengeUsed[battleId]=true;
+
+  _fb.db.collection('players').doc(attackerWallet).get().then(function(snap){
+    if(!snap.exists){showToast('Player not found');return;}
+    var d=snap.data();
+    var opp={
+      walletAddress:attackerWallet,
+      nickname:d.nickname||'Unknown',
+      hashRate:d.hashRate||1,
+      defenseRating:d.defenseRating||10,
+      coins:d.coins||0,
+      leaguePoints:d.leaguePoints||0,
+      league:d.league||'bronze'
+    };
+    /* Reset cooldown for revenge */
+    S.lastAttack=0;
+    var enemy={
+      icon:'💀',name:opp.nickname,hr:opp.hashRate,
+      def:opp.defenseRating,coins:opp.coins,tier:opp.league||'bronze'
+    };
+    startBattleGeneric(enemy,ATTACK_TYPES[0],function(isWin,isCrit,amount){
+      updateLeaguePoints(isWin,opp.league);calcHashRate();
+      if(isWin){
+        checkQuest('arena_win',1);checkQuest('arena_revenge',1);
+        checkQuest('arena_steal',amount);
+        S.pvpLog.unshift({enemy:enemy.name,win:true,crit:isCrit,amount:amount,atk:'quick',time:Date.now()});
+      }else{
+        checkShieldTrigger();
+        S.pvpLog.unshift({enemy:enemy.name,win:false,crit:false,amount:amount,atk:'quick',time:Date.now()});
+      }
+      if(S.pvpLog.length>10)S.pvpLog.pop();
+      if(_fbReady&&_fb&&_wallet){
+        _fb.db.collection('battles').add({
+          attacker:_wallet.address.toLowerCase(),
+          attackerName:getNickname()||'Unknown',
+          defender:attackerWallet,
+          defenderName:opp.nickname,
+          attackerWon:isWin,amount:amount,
+          revengeOf:battleId,
+          timestamp:firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(function(){});
+      }
+      renderArena();_fbLastSync=0;fbSave();
+    });
+  }).catch(function(){showToast('Failed to load player');});
+}
+
+/* Shield trigger — 3 losses in 1 hour = 2 hour shield */
+function checkShieldTrigger(){
+  var oneHourAgo=Date.now()-3600000;
+  var recentLosses=S.pvpLog.filter(function(l){return !l.win&&l.time>oneHourAgo;}).length;
+  if(recentLosses>=3&&(!S.shieldUntil||Date.now()>=S.shieldUntil)){
+    S.shieldUntil=Date.now()+7200000;
+    showToast('🛡️ Shield activated! 2 hours of protection');
+    if(_fbReady&&_fb&&_wallet){
+      _fb.db.collection('players').doc(_wallet.address.toLowerCase()).set({shieldUntil:S.shieldUntil},{merge:true}).catch(function(){});
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -1882,6 +2290,8 @@ function calcHashRate(){
   hr += S.upg.quantum.l * 200;
   hr *= (1 + S.upg.oc.l * 0.5);
   hr *= (1 + S.prestigeCount * 0.05);
+  var leagueBonus=getLeague(S.leaguePoints).hrBonus||0;
+  hr *= (1 + leagueBonus);
   S.hashRate = Math.floor(hr);
 }
 
@@ -1944,7 +2354,17 @@ function load(){
               S.pvpKills[name]=clampNum(parsed.pvpKills[name],0,1e9);
           });
         }
-      } else if(k === 'questDate' || k === 'dailyDate'){
+      } else if(k === 'pvpQuests'){
+        if(Array.isArray(parsed.pvpQuests)) S.pvpQuests = sanitizeQuests(parsed.pvpQuests);
+      } else if(k === 'defenseLog'){
+        if(Array.isArray(parsed.defenseLog)) S.defenseLog = parsed.defenseLog.slice(0,20);
+      } else if(k === 'arenaOpponents'){
+        if(Array.isArray(parsed.arenaOpponents)) S.arenaOpponents = parsed.arenaOpponents.slice(0,10);
+      } else if(k === 'revengeUsed'){
+        if(parsed.revengeUsed&&typeof parsed.revengeUsed==='object') S.revengeUsed = parsed.revengeUsed;
+      } else if(k === 'league'){
+        if(typeof parsed.league==='string') S.league = parsed.league;
+      } else if(k === 'questDate' || k === 'dailyDate' || k === 'pvpQuestDate'){
         if(typeof parsed[k] === 'string') S[k] = parsed[k].slice(0,10);
       } else if(typeof DEFAULTS[k] === 'boolean'){
         if(typeof parsed[k] === 'boolean') S[k] = parsed[k];
@@ -2253,49 +2673,53 @@ var QUEST_DIFF = [
   {label:'[EXTREME] ',mult:5}
 ];
 
-function generateQuests(){
-  var today = todayStr();
-  if(S.questDate === today && S.quests.length >= 5) return;
-
-  S.questDate = today;
-  S.quests = [];
-
-  /* Seed RNG from date for reproducible daily variety */
-  var count = 5 + Math.floor(Math.random() * 6); /* 5-10 quests */
-  var shuffled = QUEST_TPL.slice().sort(function(){return Math.random()-0.5;});
-  var usedIds = {};
-
-  for(var i=0; i<shuffled.length && S.quests.length<count; i++){
-    var tpl = shuffled[i];
-    if(usedIds[tpl.id]) continue;
-    usedIds[tpl.id] = true;
-
-    var target = tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
-    var diff = QUEST_DIFF[Math.floor(Math.random()*QUEST_DIFF.length)];
-    var finalTarget = Math.floor(target * diff.mult);
-    var rewardBoost = diff.mult >= 5 ? 3 : diff.mult >= 2 ? 1.8 : 1;
-
-    S.quests.push({
-      id: tpl.id,
-      name: diff.label + tpl.name,
-      desc: tpl.desc.replace('{n}', fmt(finalTarget)),
-      target: finalTarget,
-      progress: 0,
-      reward: Math.floor(finalTarget * tpl.rewardMult * rewardBoost),
-      done: false
+function generateQuestSet(templates,count){
+  var result=[];
+  var shuffled=templates.slice().sort(function(){return Math.random()-0.5;});
+  var usedIds={};
+  for(var i=0;i<shuffled.length&&result.length<count;i++){
+    var tpl=shuffled[i];
+    if(usedIds[tpl.id])continue;
+    usedIds[tpl.id]=true;
+    var target=tpl.targets[Math.floor(Math.random()*tpl.targets.length)];
+    var diff=QUEST_DIFF[Math.floor(Math.random()*QUEST_DIFF.length)];
+    var finalTarget=Math.floor(target*diff.mult);
+    var rewardBoost=diff.mult>=5?3:diff.mult>=2?1.8:1;
+    result.push({
+      id:tpl.id,
+      name:diff.label+tpl.name,
+      desc:tpl.desc.replace('{n}',fmt(finalTarget)),
+      target:finalTarget,progress:0,
+      reward:Math.floor(finalTarget*tpl.rewardMult*rewardBoost),
+      done:false
     });
+  }
+  return result;
+}
+
+function generateQuests(){
+  var today=todayStr();
+  if(S.questDate!==today||S.quests.length<5){
+    S.questDate=today;
+    var count=5+Math.floor(Math.random()*6);
+    S.quests=generateQuestSet(QUEST_TPL,count);
+  }
+  /* PvP quests — only when arena unlocked */
+  if(isPvpUnlocked()&&(S.pvpQuestDate!==today||S.pvpQuests.length<3)){
+    S.pvpQuestDate=today;
+    S.pvpQuests=generateQuestSet(ARENA_QUEST_TPL,3);
   }
 }
 
-function checkQuest(type, amount){
-  /* Find mode from QUEST_TPL */
+function checkQuestArray(arr,type,amount){
+  /* Build mode map from all templates */
   var tplMode={};
   QUEST_TPL.forEach(function(t){if(t.mode)tplMode[t.id]=t.mode;});
+  ARENA_QUEST_TPL.forEach(function(t){if(t.mode)tplMode[t.id]=t.mode;});
 
-  S.quests.forEach(function(q){
+  arr.forEach(function(q){
     if(q.done || q.id !== type) return;
     if(tplMode[q.id]==='hwm'){
-      /* High-water-mark: progress = max value reached */
       q.progress = Math.max(q.progress, Math.min(q.target, Math.floor(amount)));
     } else {
       q.progress = Math.min(q.target, q.progress + amount);
@@ -2308,72 +2732,67 @@ function checkQuest(type, amount){
     }
   });
 }
+function checkQuest(type, amount){
+  checkQuestArray(S.quests,type,amount);
+  if(isPvpUnlocked()&&S.pvpQuests) checkQuestArray(S.pvpQuests,type,amount);
+}
 
-function renderQuests(){
-  var container = document.getElementById('quest-list');
-  container.textContent = '';
-
-  /* Completion header */
-  var done=0;S.quests.forEach(function(q){if(q.done)done++;});
-  var hdr=document.createElement('div');
-  hdr.style.cssText='font-size:12px;color:var(--muted);margin-bottom:8px;text-align:center;';
-  hdr.textContent='Daily Quests ('+done+'/'+S.quests.length+')';
-  container.appendChild(hdr);
-
-  S.quests.forEach(function(q){
-    var pct = Math.min(100, (q.progress/q.target)*100);
-
-    var card = document.createElement('div');
-    card.className = 'quest-card';
-
-    var head = document.createElement('div');
-    head.className = 'quest-head';
-
-    var nameEl = document.createElement('div');
-    nameEl.className = 'quest-name';
-    nameEl.textContent = q.name;
-
-    var rewardEl = document.createElement('div');
-    rewardEl.className = 'quest-reward';
+function renderQuestCards(container,quests){
+  quests.forEach(function(q){
+    var pct=Math.min(100,(q.progress/q.target)*100);
+    var card=document.createElement('div');card.className='quest-card';
+    var head=document.createElement('div');head.className='quest-head';
+    var nameEl=document.createElement('div');nameEl.className='quest-name';nameEl.textContent=q.name;
+    var rewardEl=document.createElement('div');rewardEl.className='quest-reward';
     if(q.done){
-      var doneSpan = document.createElement('span');
-      doneSpan.className = 'quest-done';
-      doneSpan.textContent = 'DONE ✓';
-      rewardEl.appendChild(doneSpan);
-    } else {
-      rewardEl.textContent = '+'+fmt(q.reward)+' HC';
-    }
-
-    head.appendChild(nameEl);
-    head.appendChild(rewardEl);
-
-    var descEl = document.createElement('div');
-    descEl.className = 'quest-desc';
-    descEl.textContent = q.desc;
-
-    var progWrap = document.createElement('div');
-    progWrap.className = 'quest-prog';
-
-    var barWrap = document.createElement('div');
-    barWrap.className = 'bar-wrap bar-b';
-    barWrap.style.height = '8px';
-    var barFill = document.createElement('div');
-    barFill.className = 'bar-fill';
-    barFill.style.width = pct+'%';
+      var ds=document.createElement('span');ds.className='quest-done';ds.textContent='DONE \u2713';rewardEl.appendChild(ds);
+    }else{rewardEl.textContent='+'+fmt(q.reward)+' HC';}
+    head.appendChild(nameEl);head.appendChild(rewardEl);
+    var descEl=document.createElement('div');descEl.className='quest-desc';descEl.textContent=q.desc;
+    var progWrap=document.createElement('div');progWrap.className='quest-prog';
+    var barWrap=document.createElement('div');barWrap.className='bar-wrap bar-b';barWrap.style.height='8px';
+    var barFill=document.createElement('div');barFill.className='bar-fill';barFill.style.width=pct+'%';
     barWrap.appendChild(barFill);
-
-    var progText = document.createElement('div');
-    progText.className = 'quest-prog-text';
-    progText.textContent = fmt(q.progress)+'/'+fmt(q.target);
-
-    progWrap.appendChild(barWrap);
-    progWrap.appendChild(progText);
-
-    card.appendChild(head);
-    card.appendChild(descEl);
-    card.appendChild(progWrap);
+    var progText=document.createElement('div');progText.className='quest-prog-text';
+    progText.textContent=fmt(q.progress)+'/'+fmt(q.target);
+    progWrap.appendChild(barWrap);progWrap.appendChild(progText);
+    card.appendChild(head);card.appendChild(descEl);card.appendChild(progWrap);
     container.appendChild(card);
   });
+}
+
+function renderQuests(){
+  var container=document.getElementById('quest-list');
+  container.textContent='';
+
+  /* PvE Quests */
+  var done=0;S.quests.forEach(function(q){if(q.done)done++;});
+  var hdr=document.createElement('div');hdr.className='quest-panel-title';
+  hdr.textContent='⛏ PvE Quests ('+done+'/'+S.quests.length+')';
+  container.appendChild(hdr);
+  renderQuestCards(container,S.quests);
+
+  /* PvP Quests */
+  var pvpHdr=document.createElement('div');pvpHdr.className='quest-panel-title';
+  pvpHdr.style.marginTop='18px';
+  if(isPvpUnlocked()){
+    var pdone=0;S.pvpQuests.forEach(function(q){if(q.done)pdone++;});
+    pvpHdr.textContent='⚔️ Arena Quests ('+pdone+'/'+S.pvpQuests.length+')';
+    container.appendChild(pvpHdr);
+    if(S.pvpQuests.length>0){
+      renderQuestCards(container,S.pvpQuests);
+    }else{
+      var empty=document.createElement('div');
+      empty.style.cssText='font-size:11px;color:var(--muted);text-align:center;padding:10px;';
+      empty.textContent='Arena quests generate daily.';container.appendChild(empty);
+    }
+  }else{
+    pvpHdr.textContent='⚔️ Arena Quests';
+    container.appendChild(pvpHdr);
+    var lockMsg=document.createElement('div');lockMsg.className='quest-pvp-locked';
+    lockMsg.textContent='🔒 Reach Rig Score C (80 pts) to unlock Arena quests';
+    container.appendChild(lockMsg);
+  }
 }
 
 function updateQuestCountdown(){
@@ -2395,20 +2814,31 @@ function renderEnemies(){
   var container = document.getElementById('enemy-list');
   container.textContent = '';
   var cdActive = Date.now() - S.lastAttack < lastCooldownMs;
+  var rigScore = calcRigScore().score;
 
   ENEMIES.forEach(function(e,i){
-    var winPct = S.hashRate / (S.hashRate + e.def);
-    winPct = Math.max(0.2, Math.min(0.8, winPct));
-    var pctNum = Math.round(winPct*100);
-    var color = pctNum >= 60 ? 'var(--g)' : pctNum >= 40 ? 'var(--y)' : 'var(--r)';
     var tier = TIER_COLORS[e.tier||'bronze'];
+    var reqScore = TIER_UNLOCK_SCORE[e.tier||'bronze']||0;
+    var locked = rigScore < reqScore;
 
     var card = document.createElement('div');
-    card.className = 'enemy-card';
-    card.setAttribute('data-enemy', String(i));
+    card.className = 'enemy-card'+(locked?' locked':'');
     card.style.position='relative';
     card.style.borderLeft='3px solid '+tier.color;
-    if(cdActive){card.style.opacity='0.5';card.style.pointerEvents='none';}
+
+    if(locked){
+      card.style.opacity='0.4';card.style.pointerEvents='none';
+      var lockIcon=document.createElement('div');
+      lockIcon.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;z-index:2;';
+      lockIcon.textContent='🔒';
+      var lockText=document.createElement('div');
+      lockText.style.cssText='position:absolute;bottom:4px;right:8px;font-size:10px;color:'+tier.color+';';
+      lockText.textContent='Requires Score '+reqScore+' ('+tier.label+')';
+      card.appendChild(lockIcon);card.appendChild(lockText);
+    } else {
+      card.setAttribute('data-enemy', String(i));
+      if(cdActive){card.style.opacity='0.5';card.style.pointerEvents='none';}
+    }
 
     var iconDiv = document.createElement('div');
     iconDiv.className = 'enemy-icon';
@@ -2425,10 +2855,15 @@ function renderEnemies(){
     infoDiv.appendChild(nameDiv);
     infoDiv.appendChild(statsDiv);
 
+    var winPct = S.hashRate / (S.hashRate + e.def);
+    winPct = Math.max(0.2, Math.min(0.8, winPct));
+    var pctNum = Math.round(winPct*100);
+    var color = pctNum >= 60 ? 'var(--g)' : pctNum >= 40 ? 'var(--y)' : 'var(--r)';
+
     var winDiv = document.createElement('div');
     winDiv.className = 'enemy-win';
     winDiv.style.color = color;
-    winDiv.textContent = pctNum+'%';
+    winDiv.textContent = locked?'':pctNum+'%';
 
     var tierBadge = document.createElement('div');
     tierBadge.className='tier-badge';
@@ -2437,7 +2872,7 @@ function renderEnemies(){
 
     /* Kill count */
     var kills=S.pvpKills[e.name]||0;
-    if(kills>0){
+    if(kills>0&&!locked){
       var killDiv=document.createElement('div');killDiv.className='enemy-kills';
       killDiv.textContent='Defeated '+kills+'x';
       infoDiv.appendChild(killDiv);
@@ -2732,6 +3167,11 @@ function fbSave(){
     gridUnlocked:S.gridUnlocked,
     prestigeCount:S.prestigeCount,
     prestigeTokens:S.prestigeTokens,
+    leaguePoints:S.leaguePoints||0,
+    league:S.league||'bronze',
+    defenseRating:S.defenseRating||10,
+    rigScore:calcRigScore().score,
+    shieldUntil:S.shieldUntil||0,
     lastSeen:firebase.firestore.FieldValue.serverTimestamp(),
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true}).catch(function(){});
@@ -2764,6 +3204,10 @@ function fbLoad(){
     if(typeof d.prestigeTokens==='number'&&d.prestigeTokens>S.prestigeTokens){
       S.prestigeTokens=d.prestigeTokens;
     }
+    if(typeof d.leaguePoints==='number'&&d.leaguePoints>S.leaguePoints){
+      S.leaguePoints=d.leaguePoints;
+    }
+    if(typeof d.league==='string') S.league=d.league;
     updateUI();
   }).catch(function(){});
 }
@@ -2771,23 +3215,66 @@ function fbLoad(){
 /* ═══════════════════════════════════════════
    TAB SWITCHING
    ═══════════════════════════════════════════ */
+function isPvpUnlocked(){ return calcRigScore().score >= 80; }
+
+function getActiveTabs(){
+  return isPvpUnlocked()
+    ? ['nft','mine','rig','arena','quests']
+    : ['nft','mine','rig','battle','quests'];
+}
+
+function updateTabVisibility(){
+  var pvp=isPvpUnlocked();
+  /* Top nav */
+  document.querySelectorAll('.tab-btn').forEach(function(el){
+    if(el.dataset.tab==='battle') el.style.display=pvp?'none':'';
+    if(el.dataset.tab==='arena'){
+      if(!el.parentNode) return;
+      el.style.display=pvp?'':'none';
+    }
+  });
+  /* Bottom nav */
+  document.querySelectorAll('.bnav-btn').forEach(function(el){
+    if(el.dataset.tab==='battle') el.style.display=pvp?'none':'';
+    if(el.dataset.tab==='arena'){
+      if(!el.parentNode) return;
+      el.style.display=pvp?'':'none';
+    }
+  });
+  /* Inject arena nav buttons if not present */
+  if(pvp){
+    if(!document.querySelector('.tab-btn[data-tab="arena"]')){
+      var tn=document.getElementById('tab-nav');
+      var ref=tn.querySelector('.tab-btn[data-tab="battle"]');
+      var ab=document.createElement('div');ab.className='tab-btn';ab.dataset.tab='arena';ab.textContent='⚔️ ARENA';
+      if(ref) tn.insertBefore(ab,ref); else tn.appendChild(ab);
+    }
+    if(!document.querySelector('.bnav-btn[data-tab="arena"]')){
+      var bn=document.getElementById('bottom-nav');
+      var ref2=bn.querySelector('.bnav-btn[data-tab="battle"]');
+      var ab2=document.createElement('div');ab2.className='bnav-btn';ab2.dataset.tab='arena';
+      ab2.innerHTML='<span class="bnav-icon">⚔️</span>Arena';
+      if(ref2) bn.insertBefore(ab2,ref2); else bn.appendChild(ab2);
+    }
+  }
+}
+
 function switchTab(tab){
-  var tabs = ['nft','mine','rig','quests','pvp'];
-  if(tabs.indexOf(tab) === -1) return;
-
-  tabs.forEach(function(t){
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  var allTabs=['nft','mine','rig','battle','arena','quests'];
+  if(allTabs.indexOf(tab)===-1) return;
+  if(tab==='battle'&&isPvpUnlocked()) tab='arena';
+  if(tab==='arena'&&!isPvpUnlocked()) tab='battle';
+  allTabs.forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    if(el) el.classList.toggle('active',t===tab);
   });
-  document.querySelectorAll('.tab-btn').forEach(function(el,i){
-    el.classList.toggle('active', tabs[i]===tab);
+  document.querySelectorAll('.tab-btn,.bnav-btn').forEach(function(el){
+    el.classList.toggle('active',el.dataset.tab===tab);
   });
-  document.querySelectorAll('.bnav-btn').forEach(function(el,i){
-    el.classList.toggle('active', tabs[i]===tab);
-  });
-
   if(tab==='rig') renderRig();
   if(tab==='quests') renderQuests();
-  if(tab==='pvp'){renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();}
+  if(tab==='battle'){renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();}
+  if(tab==='arena') renderArena();
   if(tab==='nft') refreshNftTab();
 }
 
@@ -2841,6 +3328,7 @@ function doPrestige(){
   S.gridUnlocked=4;
   S.sellCount=0; S.repairCount=0;
   S.quests=[]; S.questDate='';
+  S.pvpQuests=[]; S.pvpQuestDate='';
 
   /* Reset all upgrade levels */
   Object.keys(S.upg).forEach(function(k){S.upg[k]={l:0,max:DEFAULTS.upg[k].max};});
@@ -3518,15 +4006,32 @@ document.getElementById('enemy-list').addEventListener('click', function(e){
   if(card && card.dataset.enemy) showAttackSelector(parseInt(card.dataset.enemy, 10));
 });
 
+/* Arena event delegation */
+document.getElementById('arena-content').addEventListener('click', function(e){
+  /* Arena opponent click */
+  var card=e.target.closest('.arena-player');
+  if(card&&card.hasAttribute('data-arena-idx')){
+    showAttackSelectorArena(parseInt(card.getAttribute('data-arena-idx'),10));return;
+  }
+  /* Refresh button */
+  if(e.target.closest('#btn-refresh-arena')){refreshArenaOpponents();return;}
+  /* Revenge button */
+  var revBtn=e.target.closest('[data-revenge-id]');
+  if(revBtn){startRevenge(revBtn.getAttribute('data-revenge-id'),revBtn.getAttribute('data-revenge-wallet'));return;}
+});
+
 /* Attack type selector delegation */
+var _pendingArenaIdx=-1;
 document.getElementById('atk-select-options').addEventListener('click', function(e){
   var opt=e.target.closest('.atk-option');
   if(!opt)return;
   var atkId=opt.getAttribute('data-atk');
   var atkType=ATTACK_TYPES.find(function(a){return a.id===atkId;});
+  var arenaIdx=opt.hasAttribute('data-arena-battle')?parseInt(opt.getAttribute('data-arena-battle'),10):-1;
   document.getElementById('atk-select-overlay').classList.remove('show');
-  if(pendingEnemyIdx>=0&&atkType) startBattle(pendingEnemyIdx,atkType);
-  pendingEnemyIdx=-1;
+  if(arenaIdx>=0&&atkType){startArenaBattle(arenaIdx,atkType);}
+  else if(pendingEnemyIdx>=0&&atkType){startBattle(pendingEnemyIdx,atkType);}
+  pendingEnemyIdx=-1;_pendingArenaIdx=-1;
 });
 document.getElementById('atk-select-cancel').addEventListener('click', function(){
   document.getElementById('atk-select-overlay').classList.remove('show');
@@ -3595,6 +4100,7 @@ async function init(){
   checkOverheat();
 
   updateUI();
+  updateTabVisibility();
   renderRig();
   renderQuests();
   renderPvpStats();
@@ -3604,6 +4110,9 @@ async function init(){
 
   await initWallet();
   initFirebase();
+
+  /* Load defense log after Firebase is ready */
+  setTimeout(function(){loadDefenseLog();},3000);
 
   /* MetaMask account/chain change listeners */
   if(typeof window.ethereum !== 'undefined'){
@@ -3619,6 +4128,7 @@ async function init(){
   updateQuestCountdown();
   setInterval(updatePvpCooldown, 1000);
   setInterval(updateSessionBar, 1000);
+  setInterval(function(){updateTabVisibility();}, 5000);
 
   /* PvP announcement banner (once per day) */
   (function(){
@@ -3641,7 +4151,7 @@ async function init(){
     document.getElementById('pvp-banner-close').addEventListener('click',dismissBanner);
     banner.querySelector('.pvp-banner-content').addEventListener('click',function(e){
       if(e.target.closest('.pvp-banner-close'))return;
-      dismissBanner();switchTab('pvp');
+      dismissBanner();switchTab(isPvpUnlocked()?'arena':'battle');
     });
   })();
 }
