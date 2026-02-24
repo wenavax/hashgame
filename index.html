@@ -522,40 +522,34 @@ body::after{
 .rig-card.depleted{border-color:var(--o);opacity:.6;}
 
 /* ═══════════════════════════════════════════
-   RIG GRID (4x4)
+   RIG SCORE + UPGRADE CARDS
    ═══════════════════════════════════════════ */
-.rig-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
-.grid-cell{
-  aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  background:var(--s1);border:1px solid var(--border);
-  transition:all .15s;cursor:pointer;position:relative;
-}
-.grid-cell-filled{border-color:var(--g);background:rgba(0,255,136,.04);}
-.grid-cell-filled.active-mining{animation:grid-pulse 2s infinite;}
-@keyframes grid-pulse{
-  0%,100%{box-shadow:0 0 0 rgba(0,255,136,0);}
-  50%{box-shadow:0 0 15px rgba(0,255,136,.3);}
-}
-.grid-cell-icon{font-size:24px;margin-bottom:2px;}
-.grid-cell-label{font-size:9px;color:var(--g);}
-.grid-cell-empty{border:1px dashed var(--muted);color:var(--muted);font-size:24px;}
-.grid-cell-empty:active{border-color:var(--g);color:var(--g);}
-.grid-cell-locked{border:1px solid rgba(26,58,80,.5);color:var(--muted);font-size:18px;opacity:.4;}
-.grid-sw-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
-.grid-sw-btn{
-  padding:8px 4px;border-radius:8px;text-align:center;
-  background:var(--s1);border:1px solid var(--border);cursor:pointer;
-  font-size:10px;color:var(--muted);transition:all .15s;
-  font-family:'Share Tech Mono',monospace;
-}
-.grid-sw-btn:active{transform:scale(.96);}
-.grid-sw-btn .sw-icon{font-size:18px;display:block;margin-bottom:2px;}
-.grid-sw-btn .sw-lvl{display:block;color:var(--b);margin-top:1px;}
-.grid-sw-btn.sw-cat{border-color:rgba(0,255,136,.25);}
-.grid-sw-btn.def-cat{border-color:rgba(0,200,255,.25);}
-.grid-sw-btn .sw-effect{display:block;font-size:8px;color:var(--g);margin-top:1px;opacity:.7;}
-.sw-category-hdr{grid-column:1/-1;font-size:11px;color:var(--muted);padding:6px 0 2px;letter-spacing:1px;font-family:'Orbitron',sans-serif;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.rig-score-banner{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.rig-score-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.rig-score-grade{font-family:'Orbitron',sans-serif;font-size:32px;font-weight:700;width:52px;height:52px;display:flex;align-items:center;justify-content:center;border:2px solid;border-radius:10px;flex-shrink:0;}
+.rig-score-info{flex:1;}
+.rig-score-title{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--muted);letter-spacing:2px;}
+.rig-score-val{font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--g);margin-top:2px;}
+.rig-score-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.rig-score-fill{height:100%;border-radius:3px;transition:width .3s;}
+.rig-score-stats{font-size:11px;color:var(--muted);margin-top:8px;text-align:center;letter-spacing:.5px;}
+
+.rig-upgrades{display:flex;flex-direction:column;gap:6px;}
+.rig-category-hdr{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--muted);letter-spacing:2px;padding:8px 0 4px;border-bottom:1px solid;margin-top:4px;}
+.rig-upg-card{background:var(--s1);border:1px solid var(--border);border-left:3px solid;border-radius:8px;padding:10px 12px;transition:opacity .2s;}
+.rig-upg-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.rig-upg-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.rig-upg-icon{font-size:20px;flex-shrink:0;}
+.rig-upg-name{font-size:12px;color:#e0e0e0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rig-upg-lvl{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--muted);flex-shrink:0;}
+.rig-upg-right{flex-shrink:0;}
+.rig-upg-btn{font-family:'Share Tech Mono',monospace;font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--muted);cursor:pointer;transition:all .15s;}
+.rig-upg-btn.can-buy{border-color:var(--g);color:var(--g);background:rgba(0,255,136,.06);}
+.rig-upg-btn.can-buy:active{transform:scale(.95);background:rgba(0,255,136,.15);}
+.rig-upg-max{font-family:'Orbitron',sans-serif;font-size:10px;color:var(--muted);letter-spacing:1px;}
+.rig-upg-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:6px 0 4px;}
+.rig-upg-fill{height:100%;border-radius:2px;transition:width .3s;}
+.rig-upg-desc{font-size:10px;color:var(--muted);}
 
 /* ═══════════════════════════════════════════
    BATTLE ARENA
@@ -755,148 +749,6 @@ body::after{
 .pvp-stat-fav{grid-column:1/-1;text-align:center;font-size:11px;color:var(--b);padding:4px;border-top:1px solid var(--border);}
 .enemy-kills{font-size:9px;color:var(--muted);margin-top:2px;}
 
-/* ═══════════════════════════════════════════
-   FULL-SCREEN RIG PAGE
-   ═══════════════════════════════════════════ */
-.rig-page{
-  position:fixed;inset:0;z-index:150;
-  background:#020806;
-  display:none;flex-direction:column;
-  overflow-y:auto;overflow-x:hidden;
-}
-.rig-page.show{display:flex;}
-
-.matrix-canvas{
-  position:absolute;inset:0;z-index:0;
-  pointer-events:none;opacity:0.4;
-}
-
-/* Header */
-.rig-page-header{
-  position:relative;z-index:1;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;
-  background:rgba(2,8,6,.85);backdrop-filter:blur(8px);
-  border-bottom:1px solid rgba(0,255,136,.15);
-}
-.rig-back-btn{
-  background:transparent;border:1px solid var(--g);border-radius:6px;
-  padding:8px 14px;color:var(--g);
-  font-family:'Orbitron',sans-serif;font-size:12px;cursor:pointer;
-  transition:all .15s;
-}
-.rig-back-btn:active{transform:scale(.95);background:rgba(0,255,136,.1);}
-.rig-page-title{
-  font-size:18px;color:var(--g);
-  text-shadow:0 0 20px rgba(0,255,136,.5);letter-spacing:3px;
-}
-.rig-page-spacer{width:70px;}
-
-/* Stats bar */
-.rig-page-stats{
-  position:relative;z-index:1;
-  display:flex;gap:6px;padding:10px 16px;
-  background:rgba(2,8,6,.7);
-}
-.rig-stat-item{
-  flex:1;text-align:center;
-  background:rgba(0,255,136,.04);
-  border:1px solid rgba(0,255,136,.12);border-radius:8px;
-  padding:8px 4px;
-}
-.rig-stat-val{
-  font-size:16px;color:var(--g);display:block;
-  text-shadow:0 0 10px rgba(0,255,136,.4);
-}
-.rig-stat-label{font-size:9px;color:var(--muted);display:block;margin-top:2px;}
-
-/* Large 4x4 grid */
-.rig-page-grid{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:repeat(4,1fr);
-  gap:10px;padding:16px;flex:1;align-content:start;
-}
-
-/* Glass-morphism grid cells */
-.rig-page-grid .grid-cell{
-  aspect-ratio:1;border-radius:12px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:rgba(10,21,32,.6);backdrop-filter:blur(10px);
-  border:1px solid rgba(0,255,136,.1);
-  transition:all .2s;cursor:pointer;position:relative;overflow:hidden;
-}
-.rig-page-grid .grid-cell-filled{
-  border-color:rgba(0,255,136,.35);
-  background:rgba(0,255,136,.06);
-  box-shadow:inset 0 0 20px rgba(0,255,136,.05),0 0 12px rgba(0,255,136,.1);
-}
-.rig-page-grid .grid-cell-filled.active-mining{
-  animation:rig-page-pulse 2s infinite;
-}
-.rig-page-grid .grid-cell-filled.active-mining::before{
-  content:'';position:absolute;inset:0;
-  background:
-    linear-gradient(90deg,transparent 49%,rgba(0,255,136,.04) 50%,transparent 51%),
-    linear-gradient(0deg,transparent 49%,rgba(0,255,136,.04) 50%,transparent 51%);
-  background-size:20px 20px;
-  animation:circuit-scroll 4s linear infinite;
-  pointer-events:none;
-}
-@keyframes circuit-scroll{from{background-position:0 0;}to{background-position:20px 20px;}}
-@keyframes rig-page-pulse{
-  0%,100%{box-shadow:inset 0 0 20px rgba(0,255,136,.05),0 0 8px rgba(0,255,136,.1);}
-  50%{box-shadow:inset 0 0 30px rgba(0,255,136,.12),0 0 20px rgba(0,255,136,.25);}
-}
-.rig-page-grid .grid-cell-icon{
-  font-size:30px;margin-bottom:4px;
-  filter:drop-shadow(0 0 6px rgba(0,255,136,.4));
-}
-.rig-page-grid .grid-cell-label{
-  font-size:10px;color:var(--g);
-  text-shadow:0 0 8px rgba(0,255,136,.3);
-}
-.rig-page-grid .grid-cell-empty{
-  border:1px dashed rgba(0,255,136,.2);
-  color:rgba(0,255,136,.3);font-size:28px;
-}
-.rig-page-grid .grid-cell-empty:active{
-  border-color:var(--g);color:var(--g);
-  background:rgba(0,255,136,.08);
-}
-.rig-page-grid .grid-cell-locked{
-  border:1px solid rgba(26,58,80,.3);opacity:.5;overflow:hidden;
-}
-.rig-page-grid .grid-cell-locked::after{
-  content:'';position:absolute;inset:-50%;
-  background:linear-gradient(45deg,transparent 40%,rgba(0,255,136,.06) 45%,rgba(0,200,255,.06) 50%,rgba(0,255,136,.06) 55%,transparent 60%);
-  animation:holo-shimmer 3s linear infinite;pointer-events:none;
-}
-@keyframes holo-shimmer{
-  from{transform:translateX(-30%) translateY(-30%);}
-  to{transform:translateX(30%) translateY(30%);}
-}
-
-/* Software toolbar */
-.rig-page-sw-label{
-  position:relative;z-index:1;
-  font-family:'Orbitron',sans-serif;font-size:10px;
-  color:var(--muted);text-align:center;letter-spacing:2px;
-  padding:0 16px 6px;
-}
-.rig-page-sw{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:6px;padding:0 16px 20px;
-}
-.rig-page-sw .grid-sw-btn{
-  background:rgba(10,21,32,.6);backdrop-filter:blur(10px);
-  border:1px solid rgba(0,200,255,.15);border-radius:10px;
-  padding:10px 6px;
-}
-.rig-page-sw .grid-sw-btn:active{
-  background:rgba(0,200,255,.1);
-  box-shadow:0 0 15px rgba(0,200,255,.2);
-}
 
 /* ═══════════════════════════════════════════
    PRESTIGE SYSTEM
@@ -1112,10 +964,10 @@ body::after{
     </div>
   </div>
 
-  <!-- ═══ RIG (GRID) TAB ═══ -->
+  <!-- ═══ RIG TAB ═══ -->
   <div class="tab-content" id="tab-rig">
-    <div id="rig-grid" class="rig-grid"></div>
-    <div id="sw-panel" class="grid-sw-panel"></div>
+    <div id="rig-score-banner" class="rig-score-banner"></div>
+    <div id="rig-upgrades" class="rig-upgrades"></div>
   </div>
 
   <!-- ═══ QUESTS TAB ═══ -->
@@ -1246,13 +1098,6 @@ body::after{
   </div>
 </div>
 
-<!-- BUY HARDWARE PANEL -->
-<div class="modal-overlay" id="buy-panel-modal">
-  <div class="modal">
-    <div class="modal-title font-title">🛒 BUY HARDWARE</div>
-    <div id="buy-panel-list"></div>
-  </div>
-</div>
 
 <!-- ATTACK TYPE SELECTOR -->
 <div class="atk-select-overlay" id="atk-select-overlay">
@@ -1293,35 +1138,6 @@ body::after{
   </div>
 </div>
 
-<!-- ═══ FULL-SCREEN RIG PAGE ═══ -->
-<div class="rig-page" id="rig-page">
-  <canvas id="matrix-canvas" class="matrix-canvas"></canvas>
-  <div class="rig-page-header">
-    <button class="rig-back-btn" id="rig-back-btn">← BACK</button>
-    <div class="rig-page-title font-title">RIG SETUP</div>
-    <div class="rig-page-spacer"></div>
-  </div>
-  <div class="rig-page-stats">
-    <div class="rig-stat-item">
-      <span class="rig-stat-val font-title" id="rig-stat-hr">0</span>
-      <span class="rig-stat-label">HASH POWER</span>
-    </div>
-    <div class="rig-stat-item">
-      <span class="rig-stat-val font-title" id="rig-stat-def">0</span>
-      <span class="rig-stat-label">DEFENSE</span>
-    </div>
-    <div class="rig-stat-item">
-      <span class="rig-stat-val font-title" id="rig-stat-auto">0</span>
-      <span class="rig-stat-label">AUTO MINERS</span>
-    </div>
-    <div class="rig-stat-item">
-      <span class="rig-stat-val font-title" id="rig-stat-coins">0</span>
-      <span class="rig-stat-label">COINS</span>
-    </div>
-  </div>
-  <div class="rig-page-grid" id="rig-page-grid"></div>
-  <div class="rig-page-sw" id="rig-page-sw"></div>
-</div>
 
 <!-- Firebase SDK (compat mode for single-file usage) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1697,130 +1513,110 @@ function updateSessionBar(){
 }
 
 /* ═══════════════════════════════════════════
-   RIG GRID
+   RIG SCORE + CARD-BASED UPGRADES
    ═══════════════════════════════════════════ */
-var HW_TYPES=[
-  {id:'gpu1',icon:'🖥️',name:'GPU'},
-  {id:'gpu2',icon:'💻',name:'RTX'},
-  {id:'asic',icon:'⚙️',name:'ASIC'},
-  {id:'rack',icon:'🏗️',name:'RACK'},
-  {id:'quantum',icon:'⚛️',name:'QUANTUM'}
+var RIG_WEIGHTS={gpu1:1,gpu2:3,asic:6,rack:12,quantum:25,algo:2,pool:2,oc:4,cache:2,coolsys:2,battery:3,shield:2,firewall:3,vault:4};
+var RIG_GRADES=[
+  {min:0,grade:'F',color:'#666'},{min:30,grade:'D',color:'#c8c8c8'},
+  {min:80,grade:'C',color:'#4ecdc4'},{min:160,grade:'B',color:'#3b82f6'},
+  {min:280,grade:'A',color:'#a855f7'},{min:400,grade:'S',color:'#fbbf24'}
 ];
-var GRID_UNLOCK_COSTS=[0,0,0,0,1000,2000,5000,10000,20000,40000,80000,160000,300000,500000,800000,1000000];
+var RIG_CATEGORIES=[
+  {key:'hw',label:'HARDWARE',color:'var(--g)',ids:['gpu1','gpu2','asic','rack','quantum']},
+  {key:'sw',label:'SOFTWARE',color:'var(--b)',ids:['algo','pool','oc','cache','coolsys','battery']},
+  {key:'def',label:'DEFENSE',color:'var(--o)',ids:['shield','firewall','vault']}
+];
 
-function getUnlockCost(idx){return GRID_UNLOCK_COSTS[idx]||1000000;}
-
-function getTotalHardware(){
-  return S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l+S.upg.quantum.l;
+function calcRigScore(){
+  var score=0,max=0;
+  Object.keys(RIG_WEIGHTS).forEach(function(k){
+    score+=S.upg[k].l*RIG_WEIGHTS[k];
+    max+=S.upg[k].max*RIG_WEIGHTS[k];
+  });
+  var grade=RIG_GRADES[0];
+  for(var i=RIG_GRADES.length-1;i>=0;i--){if(score>=RIG_GRADES[i].min){grade=RIG_GRADES[i];break;}}
+  return {score:score,max:max,pct:max?Math.round(score/max*100):0,grade:grade.grade,color:grade.color};
 }
 
-function renderGrid(){
-  var container=document.getElementById('rig-grid');
+function renderRigScore(){
+  var el=document.getElementById('rig-score-banner');
+  if(!el)return;
+  var r=calcRigScore();
+  el.textContent='';
+
+  var top=document.createElement('div');top.className='rig-score-top';
+  var gradeEl=document.createElement('div');gradeEl.className='rig-score-grade';
+  gradeEl.textContent=r.grade;gradeEl.style.color=r.color;gradeEl.style.borderColor=r.color;
+  var info=document.createElement('div');info.className='rig-score-info';
+  var title=document.createElement('div');title.className='rig-score-title';title.textContent='RIG SCORE';
+  var val=document.createElement('div');val.className='rig-score-val';
+  val.textContent=r.score+' / '+r.max+' ('+r.pct+'%)';
+  info.appendChild(title);info.appendChild(val);
+  top.appendChild(gradeEl);top.appendChild(info);
+
+  var bar=document.createElement('div');bar.className='rig-score-bar';
+  var fill=document.createElement('div');fill.className='rig-score-fill';
+  fill.style.width=r.pct+'%';fill.style.background=r.color;
+  bar.appendChild(fill);
+
+  var stats=document.createElement('div');stats.className='rig-score-stats';
+  stats.textContent='Hash: '+fmt(S.hashRate)+' H/s  |  DEF: '+fmt(S.defenseRating)+'  |  Auto: '+S.autoMiners;
+
+  el.appendChild(top);el.appendChild(bar);el.appendChild(stats);
+}
+
+function renderRig(){
+  renderRigScore();
+  var container=document.getElementById('rig-upgrades');
   if(!container)return;
   container.textContent='';
 
-  var hwItems=[];
-  var hwCount={};
-  HW_TYPES.forEach(function(hw){
-    if(!hwCount[hw.id])hwCount[hw.id]=0;
-    for(var i=0;i<S.upg[hw.id].l;i++){
-      hwCount[hw.id]++;
-      hwItems.push({icon:hw.icon,name:hw.name+' #'+hwCount[hw.id],type:hw.id});
-    }
+  RIG_CATEGORIES.forEach(function(cat){
+    var hdr=document.createElement('div');hdr.className='rig-category-hdr';
+    hdr.style.borderColor=cat.color;
+    hdr.textContent=cat.label;
+    container.appendChild(hdr);
+
+    cat.ids.forEach(function(id){
+      var u=UPGRADES[id];var lv=S.upg[id].l;var mx=S.upg[id].max;
+      var maxed=lv>=mx;var cost=uCost(id);var canBuy=S.coins>=cost&&!maxed;
+
+      var card=document.createElement('div');card.className='rig-upg-card';
+      card.style.borderLeftColor=cat.color;
+      if(maxed)card.style.opacity='0.5';
+
+      var row=document.createElement('div');row.className='rig-upg-row';
+      var left=document.createElement('div');left.className='rig-upg-left';
+      var icon=document.createElement('span');icon.className='rig-upg-icon';icon.textContent=u.icon;
+      var name=document.createElement('span');name.className='rig-upg-name';name.textContent=u.name;
+      var lvl=document.createElement('span');lvl.className='rig-upg-lvl';lvl.textContent='Lv.'+lv+'/'+mx;
+      left.appendChild(icon);left.appendChild(name);left.appendChild(lvl);
+
+      var right=document.createElement('div');right.className='rig-upg-right';
+      if(maxed){
+        var mx_el=document.createElement('span');mx_el.className='rig-upg-max';mx_el.textContent='MAX';
+        right.appendChild(mx_el);
+      }else{
+        var btn=document.createElement('button');btn.className='rig-upg-btn'+(canBuy?' can-buy':'');
+        btn.disabled=!canBuy;btn.setAttribute('data-upg-id',id);
+        btn.textContent=fmt(cost)+' HC';
+        right.appendChild(btn);
+      }
+      row.appendChild(left);row.appendChild(right);
+
+      var bar=document.createElement('div');bar.className='rig-upg-bar';
+      var fill=document.createElement('div');fill.className='rig-upg-fill';
+      fill.style.width=Math.round(lv/mx*100)+'%';fill.style.background=cat.color;
+      bar.appendChild(fill);
+
+      var desc=document.createElement('div');desc.className='rig-upg-desc';
+      var eff=SW_EFFECTS[id];var effText=eff?eff(lv):'';
+      desc.textContent=u.desc+(effText?' — '+effText:'');
+
+      card.appendChild(row);card.appendChild(bar);card.appendChild(desc);
+      container.appendChild(card);
+    });
   });
-
-  for(var i=0;i<16;i++){
-    var cell=document.createElement('div');
-    if(i<hwItems.length){
-      cell.className='grid-cell grid-cell-filled'+(S.autoMiners>0&&!S.overheated?' active-mining':'');
-      var ic=document.createElement('div');ic.className='grid-cell-icon';ic.textContent=hwItems[i].icon;
-      var lb=document.createElement('div');lb.className='grid-cell-label';lb.textContent=hwItems[i].name;
-      cell.appendChild(ic);cell.appendChild(lb);
-    }else if(i<S.gridUnlocked){
-      cell.className='grid-cell grid-cell-empty';
-      cell.textContent='+';
-      cell.setAttribute('data-grid-action','buy');
-    }else{
-      cell.className='grid-cell grid-cell-locked';
-      var lk=document.createElement('div');lk.style.fontSize='18px';lk.textContent='🔒';
-      var lc=document.createElement('div');lc.style.cssText='font-size:9px;color:var(--muted);margin-top:2px;';
-      lc.textContent=fmt(getUnlockCost(i))+' HC';
-      cell.appendChild(lk);cell.appendChild(lc);
-      cell.setAttribute('data-grid-action','unlock');
-      cell.setAttribute('data-grid-idx',String(i));
-    }
-    container.appendChild(cell);
-  }
-  renderSwPanel();
-}
-
-function unlockGridSlot(idx){
-  idx=parseInt(idx,10);
-  if(idx!==S.gridUnlocked)return;
-  var cost=getUnlockCost(idx);
-  if(S.coins<cost){showToast('Need '+fmt(cost)+' HC to unlock!');return;}
-  S.coins-=cost;
-  S.gridUnlocked++;
-  checkQuest('unlock_slot', 1);
-  showToast('🔓 Grid slot unlocked!');
-  renderGrid();updateUI();
-  if(rigPageOpen){renderRigPageGrid();updateRigPageStats();}
-}
-
-function openBuyPanel(){
-  var container=document.getElementById('buy-panel-list');
-  container.textContent='';
-  var totalHw=getTotalHardware();
-  var hasSpace=totalHw<S.gridUnlocked;
-
-  ['gpu1','gpu2','asic','rack','quantum'].forEach(function(id){
-    var u=UPGRADES[id];var lv=S.upg[id].l;var mx=S.upg[id].max;
-    var cost=uCost(id);var maxed=lv>=mx;var canBuy=S.coins>=cost&&!maxed&&hasSpace;
-
-    var card=document.createElement('div');card.className='upg-card';
-    var iconDiv=document.createElement('div');iconDiv.className='upg-icon';iconDiv.textContent=u.icon;
-    var infoDiv=document.createElement('div');infoDiv.className='upg-info';
-    var nameDiv=document.createElement('div');nameDiv.className='upg-name';nameDiv.textContent=u.name;
-    var descDiv=document.createElement('div');descDiv.className='upg-desc';descDiv.textContent=u.desc;
-    var lvlDiv=document.createElement('div');lvlDiv.className='upg-lvl';lvlDiv.textContent='Lv.'+lv+'/'+mx;
-    infoDiv.appendChild(nameDiv);infoDiv.appendChild(descDiv);infoDiv.appendChild(lvlDiv);
-    var buyDiv=document.createElement('div');buyDiv.className='upg-buy';
-    var btn=document.createElement('button');
-    btn.className='btn btn-sm '+(maxed?'':'btn-g');
-    btn.disabled=!canBuy;
-    btn.textContent=maxed?'MAX':!hasSpace?'NO SLOT':fmt(cost)+' HC';
-    btn.setAttribute('data-hw-buy',id);
-    buyDiv.appendChild(btn);
-    card.appendChild(iconDiv);card.appendChild(infoDiv);card.appendChild(buyDiv);
-    container.appendChild(card);
-  });
-
-  document.getElementById('buy-panel-modal').classList.add('show');
-}
-
-function closeBuyPanel(){document.getElementById('buy-panel-modal').classList.remove('show');}
-
-function renderSwPanel(){
-  var c=document.getElementById('sw-panel');
-  if(!c)return;
-  c.textContent='';
-
-  var swHdr=document.createElement('div');swHdr.className='sw-category-hdr';swHdr.textContent='SOFTWARE';
-  c.appendChild(swHdr);
-
-  var swItems=[
-    {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
-    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'}
-  ];
-  swItems.forEach(function(item){c.appendChild(createSwBtn(item,'sw'));});
-
-  var defHdr=document.createElement('div');defHdr.className='sw-category-hdr';defHdr.textContent='DEFENSE';
-  c.appendChild(defHdr);
-
-  var defItems=[
-    {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
-  ];
-  defItems.forEach(function(item){c.appendChild(createSwBtn(item,'def'));});
 }
 
 /* ═══════════════════════════════════════════
@@ -2171,10 +1967,6 @@ function load(){
     S.cool = Math.min(S.cool, S.maxCool);
     S.health = Math.min(S.health, S.maxHealth);
 
-    /* Grid migration: grandfather existing hardware */
-    var totalHw = S.upg.gpu1.l+S.upg.gpu2.l+S.upg.asic.l+S.upg.rack.l+S.upg.quantum.l;
-    if(totalHw > S.gridUnlocked) S.gridUnlocked = Math.min(16, totalHw);
-
     calcHashRate();
     calcDefense();
     calcAutoMiners();
@@ -2426,13 +2218,6 @@ function buyUpgrade(id){
   if(S.coins < cost) return;
   if(S.upg[id].l >= S.upg[id].max) return;
 
-  /* Hardware upgrades need a free grid slot */
-  if(UPGRADES[id].cat==='hw'){
-    if(getTotalHardware()>=S.gridUnlocked){
-      showToast('🔒 No empty grid slot! Unlock more.');return;
-    }
-  }
-
   S.coins -= cost;
   S.upg[id] = {l: S.upg[id].l + 1, max: S.upg[id].max};
   checkQuest('upgrade', 1);
@@ -2451,12 +2236,9 @@ function buyUpgrade(id){
 
   showToast('⬆️ ' + UPGRADES[id].name + ' → Lv.' + S.upg[id].l);
   updateUI();
-  renderGrid();
-  if(rigPageOpen){renderRigPageGrid();updateRigPageStats();}
-  closeBuyPanel();
+  renderRig();
 }
 
-/* renderUpgrades removed — replaced by grid + buy panel */
 
 /* ═══════════════════════════════════════════
    DAILY QUESTS (safe DOM rendering)
@@ -2993,12 +2775,6 @@ function switchTab(tab){
   var tabs = ['nft','mine','rig','quests','pvp'];
   if(tabs.indexOf(tab) === -1) return;
 
-  /* RIG opens full-screen page */
-  if(tab==='rig'){showRigPage();return;}
-
-  /* Close rig page if switching away */
-  if(rigPageOpen) hideRigPage();
-
   tabs.forEach(function(t){
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
@@ -3009,12 +2785,12 @@ function switchTab(tab){
     el.classList.toggle('active', tabs[i]===tab);
   });
 
+  if(tab==='rig') renderRig();
   if(tab==='quests') renderQuests();
   if(tab==='pvp'){renderPvpStats();renderEnemies();renderBattleLog();renderPvpStreak();}
   if(tab==='nft') refreshNftTab();
 }
 
-/* switchSub removed — replaced by grid */
 
 /* ═══════════════════════════════════════════
    PRESTIGE SYSTEM
@@ -3078,7 +2854,7 @@ function doPrestige(){
 
   save();
   updateUI();
-  renderGrid();
+  renderRig();
   renderQuests();
 
   showToast('⭐ PRESTIGE! +5% HR, +50 Energy — '+getPrestigeTitle(S.prestigeCount));
@@ -3181,126 +2957,14 @@ function showToast(msg){
 }
 
 /* ═══════════════════════════════════════════
-   MATRIX RAIN ANIMATION
+   RIG SCORE + CARD-BASED UPGRADE LIST
    ═══════════════════════════════════════════ */
-var matrixAnimId=null;
-
-function initMatrixRain(){
-  var canvas=document.getElementById('matrix-canvas');
-  if(!canvas)return;
-  var ctx=canvas.getContext('2d');
-  var chars='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF#$%&@'.split('');
-  var fontSize=14;
-  var columns,drops;
-
-  function resize(){
-    canvas.width=canvas.parentElement.clientWidth;
-    canvas.height=canvas.parentElement.clientHeight;
-    columns=Math.floor(canvas.width/fontSize);
-    drops=[];
-    for(var i=0;i<columns;i++) drops[i]=Math.random()*-100;
-  }
-
-  function draw(){
-    ctx.fillStyle='rgba(2,8,6,0.05)';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.font=fontSize+'px monospace';
-
-    for(var i=0;i<columns;i++){
-      var ch=chars[Math.floor(Math.random()*chars.length)];
-      var x=i*fontSize;
-      var y=drops[i]*fontSize;
-      ctx.fillStyle='rgba(0,255,136,'+(0.5+Math.random()*0.5)+')';
-      ctx.fillText(ch,x,y);
-      if(y>canvas.height&&Math.random()>0.975) drops[i]=0;
-      drops[i]++;
-    }
-    matrixAnimId=requestAnimationFrame(draw);
-  }
-
-  resize();
-  window.addEventListener('resize',resize);
-  draw();
-}
-
-function stopMatrixRain(){
-  if(matrixAnimId){cancelAnimationFrame(matrixAnimId);matrixAnimId=null;}
-}
-
-/* ═══════════════════════════════════════════
-   RIG PAGE SHOW / HIDE
-   ═══════════════════════════════════════════ */
-var rigPageOpen=false;
-
-function showRigPage(){
-  document.getElementById('rig-page').classList.add('show');
-  rigPageOpen=true;
-  renderRigPageGrid();
-  updateRigPageStats();
-  initMatrixRain();
-  document.getElementById('bottom-nav').style.display='none';
-}
-
-function hideRigPage(){
-  document.getElementById('rig-page').classList.remove('show');
-  rigPageOpen=false;
-  stopMatrixRain();
-  document.getElementById('bottom-nav').style.display='';
-  renderGrid();
-}
-
-function updateRigPageStats(){
-  var el;
-  el=document.getElementById('rig-stat-hr');if(el)el.textContent=fmt(S.hashRate);
-  el=document.getElementById('rig-stat-def');if(el)el.textContent=fmt(S.defenseRating);
-  el=document.getElementById('rig-stat-auto');if(el)el.textContent=String(S.autoMiners);
-  el=document.getElementById('rig-stat-coins');if(el)el.textContent=fmt(S.coins);
-}
-
-/* ═══════════════════════════════════════════
-   RIG PAGE GRID RENDERING
-   ═══════════════════════════════════════════ */
-function renderRigPageGrid(){
-  var container=document.getElementById('rig-page-grid');
-  if(!container)return;
-  container.textContent='';
-
-  var hwItems=[];
-  var hwCount={};
-  HW_TYPES.forEach(function(hw){
-    if(!hwCount[hw.id])hwCount[hw.id]=0;
-    for(var i=0;i<S.upg[hw.id].l;i++){
-      hwCount[hw.id]++;
-      hwItems.push({icon:hw.icon,name:hw.name+' #'+hwCount[hw.id]});
-    }
-  });
-
-  for(var i=0;i<16;i++){
-    var cell=document.createElement('div');
-    if(i<hwItems.length){
-      cell.className='grid-cell grid-cell-filled'+(S.autoMiners>0&&!S.overheated?' active-mining':'');
-      var ic=document.createElement('div');ic.className='grid-cell-icon';ic.textContent=hwItems[i].icon;
-      var lb=document.createElement('div');lb.className='grid-cell-label';lb.textContent=hwItems[i].name;
-      cell.appendChild(ic);cell.appendChild(lb);
-    }else if(i<S.gridUnlocked){
-      cell.className='grid-cell grid-cell-empty';
-      cell.textContent='+';
-      cell.setAttribute('data-grid-action','buy');
-    }else{
-      cell.className='grid-cell grid-cell-locked';
-      var lk=document.createElement('div');lk.style.fontSize='18px';lk.textContent='🔒';
-      var lc=document.createElement('div');lc.style.cssText='font-size:9px;color:var(--muted);margin-top:2px;';
-      lc.textContent=fmt(getUnlockCost(i))+' HC';
-      cell.appendChild(lk);cell.appendChild(lc);
-      cell.setAttribute('data-grid-action','unlock');
-      cell.setAttribute('data-grid-idx',String(i));
-    }
-    container.appendChild(cell);
-  }
-  renderRigPageSwPanel();
-}
-
 var SW_EFFECTS={
+  gpu1:function(l){return l>0?'+'+l*2+' H/s':''},
+  gpu2:function(l){return l>0?'+'+l*8+' H/s':''},
+  asic:function(l){return l>0?'+'+l*25+' H/s':''},
+  rack:function(l){return l>0?'+'+l*100+' H/s':''},
+  quantum:function(l){return l>0?'+'+l*200+' H/s':''},
   algo:function(l){return l>0?'+'+l*15+'% eff':''},
   pool:function(l){return l>0?'+'+l*20+'% block':''},
   oc:function(l){return l>0?'+'+l*50+'% H/s':''},
@@ -3311,52 +2975,6 @@ var SW_EFFECTS={
   firewall:function(l){return l>0?'+'+l*20+' DEF':''},
   vault:function(l){return l>0?l*20+'% protect':''}
 };
-
-function createSwBtn(item,cat){
-  var lv=S.upg[item.id].l;var mx=S.upg[item.id].max;var maxed=lv>=mx;var cost=uCost(item.id);
-  var btn=document.createElement('div');btn.className='grid-sw-btn '+(cat==='def'?'def-cat':'sw-cat');
-  btn.setAttribute('data-sw-upg',item.id);
-  var ic=document.createElement('span');ic.className='sw-icon';ic.textContent=item.icon;
-  var nm=document.createElement('span');nm.textContent=item.name;
-  var lbl=document.createElement('span');lbl.className='sw-lvl';
-  lbl.textContent=maxed?'MAX':'Lv.'+lv+' · '+fmt(cost);
-  btn.appendChild(ic);btn.appendChild(nm);btn.appendChild(lbl);
-  var eff=SW_EFFECTS[item.id];
-  if(eff){
-    var effText=eff(lv);
-    if(effText){
-      var effEl=document.createElement('span');effEl.className='sw-effect';
-      effEl.textContent=effText;
-      if(cat==='def')effEl.style.color='var(--b)';
-      btn.appendChild(effEl);
-    }
-  }
-  if(maxed)btn.style.opacity='0.4';
-  return btn;
-}
-
-function renderRigPageSwPanel(){
-  var c=document.getElementById('rig-page-sw');
-  if(!c)return;
-  c.textContent='';
-
-  var swHdr=document.createElement('div');swHdr.className='sw-category-hdr';swHdr.textContent='SOFTWARE';
-  c.appendChild(swHdr);
-
-  var swItems=[
-    {id:'algo',icon:'🔮',name:'Algorithm'},{id:'pool',icon:'🌊',name:'Pool'},{id:'oc',icon:'🚀',name:'Overclock'},
-    {id:'cache',icon:'💾',name:'Hash Cache'},{id:'coolsys',icon:'🧊',name:'Liq. Cool'},{id:'battery',icon:'🔋',name:'UPS Battery'}
-  ];
-  swItems.forEach(function(item){c.appendChild(createSwBtn(item,'sw'));});
-
-  var defHdr=document.createElement('div');defHdr.className='sw-category-hdr';defHdr.textContent='DEFENSE';
-  c.appendChild(defHdr);
-
-  var defItems=[
-    {id:'shield',icon:'🛡️',name:'Shield'},{id:'firewall',icon:'🔒',name:'Firewall'},{id:'vault',icon:'🏦',name:'Vault'}
-  ];
-  defItems.forEach(function(item){c.appendChild(createSwBtn(item,'def'));});
-}
 
 /* ═══════════════════════════════════════════
    NFT SYSTEM — MetaMask + On-chain PvP
@@ -3881,29 +3499,6 @@ document.getElementById('tab-nft').addEventListener('click', function(e){
   if(cancelBtn){cancelNftChallenge(Number(cancelBtn.dataset.chId));return;}
 });
 
-/* Grid cell delegation */
-document.getElementById('rig-grid').addEventListener('click', function(e){
-  var cell = e.target.closest('.grid-cell');
-  if(!cell) return;
-  var action = cell.getAttribute('data-grid-action');
-  if(action === 'buy') openBuyPanel();
-  else if(action === 'unlock') unlockGridSlot(cell.getAttribute('data-grid-idx'));
-});
-
-/* Software/defense panel delegation */
-document.getElementById('sw-panel').addEventListener('click', function(e){
-  var btn = e.target.closest('.grid-sw-btn');
-  if(btn && btn.dataset.swUpg) buyUpgrade(btn.dataset.swUpg);
-});
-
-/* Buy hardware panel delegation */
-document.getElementById('buy-panel-list').addEventListener('click', function(e){
-  var btn = e.target.closest('button[data-hw-buy]');
-  if(btn) buyUpgrade(btn.dataset.hwBuy);
-});
-document.getElementById('buy-panel-modal').addEventListener('click', function(e){
-  if(e.target === this) closeBuyPanel();
-});
 
 /* Wallet tabs delegation */
 document.getElementById('wallet-tabs').addEventListener('click', function(e){
@@ -3949,21 +3544,10 @@ document.getElementById('block-modal').addEventListener('click', function(e){
   if(e.target === this) closeBlockModal();
 });
 
-/* Rig page */
-document.getElementById('rig-back-btn').addEventListener('click', function(){
-  hideRigPage();
-  switchTab('mine');
-});
-document.getElementById('rig-page-grid').addEventListener('click', function(e){
-  var cell=e.target.closest('.grid-cell');
-  if(!cell)return;
-  var action=cell.getAttribute('data-grid-action');
-  if(action==='buy') openBuyPanel();
-  else if(action==='unlock') unlockGridSlot(cell.getAttribute('data-grid-idx'));
-});
-document.getElementById('rig-page-sw').addEventListener('click', function(e){
-  var btn=e.target.closest('.grid-sw-btn');
-  if(btn&&btn.dataset.swUpg) buyUpgrade(btn.dataset.swUpg);
+/* Rig tab delegation */
+document.getElementById('tab-rig').addEventListener('click', function(e){
+  var btn=e.target.closest('.rig-upg-btn');
+  if(btn&&btn.dataset.upgId) buyUpgrade(btn.dataset.upgId);
 });
 
 /* Prestige */
@@ -4011,7 +3595,7 @@ async function init(){
   checkOverheat();
 
   updateUI();
-  renderGrid();
+  renderRig();
   renderQuests();
   renderPvpStats();
   renderEnemies();
